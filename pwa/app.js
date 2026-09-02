@@ -115,27 +115,27 @@ window.addEventListener('DOMContentLoaded', () => {
 function renderFeed() {
   const container = document.getElementById('feedContainer');
   container.innerHTML = FEED_ITEMS.map((item, i) => `
-    <div class="feed-item">
+    <div class="feed-item" onclick="handleFeedTap(event, ${item.id}, ${i})">
       <div class="feed-bg" style="background-image:url('${item.bg}')"></div>
       <div class="feed-overlay"></div>
       ${item.sale ? `<div class="feed-sale-chip">${item.sale}</div>` : ''}
       <div class="feed-actions">
-        <button class="feed-action-btn ${item.likedByMe ? 'liked' : ''}" id="feedLike${i}" onclick="toggleFeedLike(${item.id}, ${i})">
+        <button class="feed-action-btn ${item.likedByMe ? 'liked' : ''}" id="feedLike${i}" onclick="event.stopPropagation();toggleFeedLike(${item.id}, ${i})">
           <div class="icon-circle">
             <span class="material-symbols-outlined" id="feedLikeIcon${i}" style="${item.likedByMe ? "font-variation-settings:'FILL' 1" : ''}">favorite</span>
           </div>
           <span id="feedLikeCount${i}">${item.likes}</span>
         </button>
-        <button class="feed-action-btn" onclick="navigateTo('comments', FEED_ITEMS.find(f=>f.id==${item.id}))">
+        <button class="feed-action-btn" onclick="event.stopPropagation();navigateTo('comments', FEED_ITEMS.find(f=>f.id==${item.id}))">
           <div class="icon-circle"><span class="material-symbols-outlined">chat_bubble</span></div>
           <span id="feedCommentCount${i}">${item.comments}</span>
         </button>
-        <button class="feed-action-btn" onclick="handleShare(${item.product.id})">
+        <button class="feed-action-btn" onclick="event.stopPropagation();handleShare(${item.product.id})">
           <div class="icon-circle"><span class="material-symbols-outlined">share</span></div>
           <span>Compartilhar</span>
         </button>
       </div>
-      <div class="feed-product-card" onclick="navigateTo('product', PRODUCTS.find(p=>p.id==${item.product.id}))">
+      <div class="feed-product-card" onclick="event.stopPropagation();navigateTo('product', PRODUCTS.find(p=>p.id==${item.product.id}))">
         <div class="feed-product-name">${item.product.name}</div>
         <div class="feed-prices">
           <span class="feed-price">R$ ${item.product.price.toFixed(2).replace('.',',')}</span>
@@ -149,6 +149,47 @@ function renderFeed() {
   `).join('');
 }
 
+// Double-tap-to-like on the media itself (Instagram-style big heart burst),
+// plus the sidebar like button spawns floating hearts on every like — see
+// toggleFeedLike below.
+const lastFeedTapAt = {};
+function handleFeedTap(e, feedItemId, i) {
+  const now = Date.now();
+  const last = lastFeedTapAt[feedItemId] || 0;
+  lastFeedTapAt[feedItemId] = now;
+  if (now - last > 300) return; // single tap — nothing to do
+  lastFeedTapAt[feedItemId] = 0; // consume so a 3rd rapid tap isn't a "double" again
+  const feedItemEl = e.currentTarget;
+  spawnBigHeart(feedItemEl);
+  const item = FEED_ITEMS.find(f => f.id === feedItemId);
+  if (item && !item.likedByMe) toggleFeedLike(feedItemId, i); // never unlikes on double-tap
+}
+
+function spawnBigHeart(feedItemEl) {
+  const heart = document.createElement('span');
+  heart.className = 'material-symbols-outlined big-heart-burst';
+  heart.style.fontVariationSettings = "'FILL' 1";
+  heart.textContent = 'favorite';
+  feedItemEl.appendChild(heart);
+  heart.addEventListener('animationend', () => heart.remove());
+}
+
+function spawnFloatingHearts(feedItemEl, count = 6) {
+  for (let n = 0; n < count; n++) {
+    setTimeout(() => {
+      const heart = document.createElement('span');
+      heart.className = 'material-symbols-outlined floating-heart';
+      heart.style.fontVariationSettings = "'FILL' 1";
+      heart.style.setProperty('--drift', Math.round(Math.random() * 70 - 35) + 'px');
+      heart.style.setProperty('--rot', Math.round(Math.random() * 40 - 20) + 'deg');
+      heart.style.right = (8 + Math.random() * 24) + 'px';
+      heart.textContent = 'favorite';
+      feedItemEl.appendChild(heart);
+      heart.addEventListener('animationend', () => heart.remove());
+    }, n * 90);
+  }
+}
+
 function formatCount(n) {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return String(n);
@@ -158,6 +199,7 @@ async function toggleFeedLike(feedItemId, i) {
   const btn = document.getElementById('feedLike' + i);
   const icon = document.getElementById('feedLikeIcon' + i);
   const countEl = document.getElementById('feedLikeCount' + i);
+  const iconCircle = btn.querySelector('.icon-circle');
   try {
     const { liked, likesCount } = await api(`/api/feed/${feedItemId}/like/toggle`, { method: 'POST' });
     btn.classList.toggle('liked', liked);
@@ -165,6 +207,14 @@ async function toggleFeedLike(feedItemId, i) {
     countEl.textContent = formatCount(likesCount);
     const item = FEED_ITEMS.find(f => f.id === feedItemId);
     if (item) { item.likedByMe = liked; item.likes = formatCount(likesCount); }
+    if (liked) {
+      // Instagram/TikTok-style feedback: the heart pops, and a little burst
+      // of hearts floats up from the button and fades out.
+      iconCircle.classList.remove('pop');
+      void iconCircle.offsetWidth; // restart the animation even if it's already mid-pop
+      iconCircle.classList.add('pop');
+      spawnFloatingHearts(btn.closest('.feed-item'));
+    }
   } catch (err) {
     showToast('Erro ao curtir: ' + err.message);
   }
