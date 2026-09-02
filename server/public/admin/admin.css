@@ -1,0 +1,140 @@
+:root {
+  --primary: #b0004a;
+  --primary-dark: #d81b60;
+  --on-primary: #ffffff;
+  --background: #f8f9fa;
+  --on-background: #191c1d;
+  --surface: #ffffff;
+  --surface-container: #f3f4f5;
+  --surface-container-high: #e7e8e9;
+  --outline: #d9dadb;
+  --on-surface-variant: #5a4044;
+  --error: #ba1a1a;
+  --success: #1a7b45;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Hanken Grotesk', -apple-system, sans-serif;
+  background: var(--background);
+  color: var(--on-background);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--outline);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar h1 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0;
+}
+
+.topbar nav { display: flex; gap: 4px; }
+
+.topbar nav a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.topbar nav a.active, .topbar nav a:hover { background: var(--surface-container); color: var(--primary); }
+
+main { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+
+h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; margin: 0 0 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn:hover { background: var(--primary-dark); }
+.btn.secondary { background: var(--surface-container-high); color: var(--on-background); }
+.btn.danger { background: var(--error); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 700; color: var(--on-surface-variant); }
+.field input, .field textarea, .field select {
+  padding: 10px 12px;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.field textarea { min-height: 80px; resize: vertical; }
+.row { display: flex; gap: 12px; }
+.row > .field { flex: 1; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--outline); font-size: 14px; }
+th { color: var(--on-surface-variant); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+tr:hover td { background: var(--surface-container); }
+img.thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.badge.processing { background: #fff3cd; color: #8a6d00; }
+.badge.shipping { background: #d4e8ff; color: #0b4a8f; }
+.badge.delivered { background: #d4f5df; color: var(--success); }
+.badge.cancelled { background: #ffdad6; color: var(--error); }
+.badge.inactive { background: #eee; color: #777; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.error-msg { color: var(--error); font-size: 14px; margin-top: 8px; }
+.success-msg { color: var(--success); font-size: 14px; margin-top: 8px; }
+
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-card { width: 320px; text-align: center; }
+.login-card h1 { color: var(--primary); font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 20px; }
+
+.gallery { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.gallery .thumb-wrap { position: relative; }
+.gallery img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 2px solid transparent; }
+.gallery img.is-primary { border-color: var(--primary); }
+.gallery .remove-btn {
+  position: absolute; top: -6px; right: -6px; background: var(--error); color: #fff;
+  border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; line-height: 1;
+}

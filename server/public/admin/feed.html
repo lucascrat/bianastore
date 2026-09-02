@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Feed</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <h2>Feed (tela inicial estilo TikTok)</h2>
+
+  <div class="card">
+    <h2 style="font-size:16px">Adicionar item ao feed</h2>
+    <div class="row">
+      <div class="field"><label>Produto</label><select id="productId"></select></div>
+      <div class="field"><label>Tipo de mídia</label>
+        <select id="mediaType"><option value="image">Imagem</option><option value="video">Vídeo</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Enviar imagem/vídeo</label>
+      <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm"/>
+    </div>
+    <div class="field"><label>URL da mídia (preenchido automaticamente após upload)</label><input id="mediaUrl"/></div>
+    <div class="row">
+      <div class="field"><label>Curtidas</label><input id="likesCount" type="number" value="0"/></div>
+      <div class="field"><label>Comentários</label><input id="commentsCount" type="number" value="0"/></div>
+    </div>
+    <div class="field"><label>Selo de promoção (opcional)</label><input id="saleBadge" placeholder="Ex: 30% OFF"/></div>
+    <button class="btn" onclick="addFeedItem()">Adicionar ao feed</button>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card" style="padding:0">
+    <table>
+      <thead><tr><th></th><th>Produto</th><th>Tipo</th><th>Curtidas</th><th>Comentários</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="6">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('feed');
+let products = [];
+
+async function load() {
+  await requireAuth();
+  products = await api('/products');
+  document.getElementById('productId').innerHTML = products.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+
+  document.getElementById('fileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('mediaType').value = file.type.startsWith('video') ? 'video' : 'image';
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const { url } = await api('/media/upload', { method: 'POST', body: form });
+      document.getElementById('mediaUrl').value = url;
+    } catch (err) {
+      document.getElementById('msg').innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  await loadTable();
+}
+
+async function loadTable() {
+  const items = await api('/feed');
+  const rows = document.getElementById('rows');
+  if (!items.length) {
+    rows.innerHTML = '<tr><td colspan="6">Nenhum item no feed ainda.</td></tr>';
+    return;
+  }
+  rows.innerHTML = items.map((f) => `
+    <tr>
+      <td>${f.media_type === 'image' ? `<img class="thumb" src="${escapeHtml(f.media_url)}"/>` : '🎬'}</td>
+      <td>${escapeHtml(f.product_name)}</td>
+      <td>${f.media_type}</td>
+      <td>${f.likes_count}</td>
+      <td>${f.comments_count}</td>
+      <td><button class="btn danger" onclick="removeFeedItem(${f.id})">Remover</button></td>
+    </tr>
+  `).join('');
+}
+
+async function addFeedItem() {
+  const msg = document.getElementById('msg');
+  try {
+    if (!document.getElementById('mediaUrl').value) throw new Error('Envie uma imagem/vídeo primeiro.');
+    await api('/feed', {
+      method: 'POST',
+      body: JSON.stringify({
+        productId: document.getElementById('productId').value,
+        mediaUrl: document.getElementById('mediaUrl').value,
+        mediaType: document.getElementById('mediaType').value,
+        likesCount: parseInt(document.getElementById('likesCount').value, 10) || 0,
+        commentsCount: parseInt(document.getElementById('commentsCount').value, 10) || 0,
+        saleBadge: document.getElementById('saleBadge').value || null,
+      }),
+    });
+    msg.innerHTML = '<div class="success-msg">Adicionado!</div>';
+    document.getElementById('mediaUrl').value = '';
+    document.getElementById('saleBadge').value = '';
+    await loadTable();
+  } catch (err) {
+    msg.innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function removeFeedItem(id) {
+  await api(`/feed/${id}`, { method: 'DELETE' });
+  await loadTable();
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Pedido</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <div class="toolbar">
+    <h2 id="title">Pedido</h2>
+    <a class="btn secondary" href="/admin/orders.html">← Voltar</a>
+  </div>
+  <div id="content">Carregando…</div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('orders');
+const orderId = new URLSearchParams(location.search).get('id');
+
+async function load() {
+  await requireAuth();
+  const o = await api(`/orders/${orderId}`);
+  document.getElementById('title').textContent = `Pedido ${o.order_number}`;
+  const addr = o.shipping_address || {};
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="row">
+        <div class="field"><label>Status</label>
+          <select id="status">
+            ${['processing', 'shipping', 'delivered', 'cancelled'].map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Rótulo do status</label><input id="statusLabel" value="${escapeHtml(o.status_label)}"/></div>
+      </div>
+      <button class="btn" onclick="updateStatus()">Atualizar status</button>
+      <span id="msg"></span>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:16px">Endereço de entrega</h2>
+      <p>${escapeHtml(addr.street || '')}, ${escapeHtml(addr.number || '')} ${escapeHtml(addr.complement || '')}<br/>
+      ${escapeHtml(addr.neighborhood || '')} — ${escapeHtml(addr.city || '')}/${escapeHtml(addr.state || '')}<br/>
+      CEP: ${escapeHtml(addr.cep || '')}</p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:16px">Itens</h2>
+      <table>
+        <thead><tr><th></th><th>Produto</th><th>Tam.</th><th>Qtd</th><th>Preço</th></tr></thead>
+        <tbody>
+          ${o.items.map((i) => `
+            <tr>
+              <td>${i.product_image_snapshot ? `<img class="thumb" src="${escapeHtml(i.product_image_snapshot)}"/>` : ''}</td>
+              <td>${escapeHtml(i.product_name_snapshot)}</td>
+              <td>${escapeHtml(i.size)}</td>
+              <td>${i.qty}</td>
+              <td>${fmtMoney(i.unit_price)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="text-align:right;margin-top:12px;font-weight:700">
+        Subtotal: ${fmtMoney(o.subtotal)}<br/>
+        Desconto: ${fmtMoney(o.discount)}<br/>
+        Frete: ${fmtMoney(o.shipping_cost)}<br/>
+        <span style="font-size:18px;color:var(--primary)">Total: ${fmtMoney(o.total)}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function updateStatus() {
+  const msg = document.getElementById('msg');
+  try {
+    await api(`/orders/${orderId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: document.getElementById('status').value, statusLabel: document.getElementById('statusLabel').value }),
+    });
+    msg.textContent = 'Atualizado!';
+    msg.className = 'success-msg';
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'error-msg';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

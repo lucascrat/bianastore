@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Produto</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <div class="toolbar">
+    <h2 id="title">Novo Produto</h2>
+    <a class="btn secondary" href="/admin/index.html">← Voltar</a>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label>Nome</label><input id="name"/></div>
+      <div class="field"><label>Categoria</label><select id="categoryId"></select></div>
+    </div>
+    <div class="field"><label>Subtítulo</label><input id="sub" placeholder="Ex: Crepe de seda fluido"/></div>
+    <div class="row">
+      <div class="field"><label>Preço (R$)</label><input id="price" type="number" step="0.01"/></div>
+      <div class="field"><label>Preço antigo (opcional, para desconto)</label><input id="oldPrice" type="number" step="0.01"/></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Cores (hex, separadas por vírgula)</label><input id="colors" placeholder="#F5C2C7, #191c1d"/></div>
+      <div class="field"><label>Tamanhos (separados por vírgula)</label><input id="sizes" placeholder="P, M, G, GG"/></div>
+    </div>
+    <div class="field"><label>Descrição</label><textarea id="description"></textarea></div>
+    <div class="row">
+      <div class="field"><label>Avaliação (0-5)</label><input id="rating" type="number" step="0.1" min="0" max="5"/></div>
+      <div class="field"><label>Nº de avaliações</label><input id="reviewsCount" type="number" min="0"/></div>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="isActive" checked style="width:auto"/> Produto ativo (visível na loja)</label>
+    </div>
+
+    <div class="field">
+      <label>Imagens / Vídeo</label>
+      <input type="file" id="fileInput" accept="image/*,video/mp4,video/webm" multiple/>
+      <div class="gallery" id="gallery"></div>
+      <div class="error-msg" id="uploadErr" style="display:none"></div>
+    </div>
+
+    <button class="btn" onclick="save()">Salvar</button>
+    <span id="saveMsg"></span>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('products');
+const params = new URLSearchParams(location.search);
+const productId = params.get('id');
+let images = [];
+
+async function init() {
+  await requireAuth();
+  const categories = await api('/categories');
+  document.getElementById('categoryId').innerHTML =
+    '<option value="">— sem categoria —</option>' +
+    categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+  if (productId) {
+    document.getElementById('title').textContent = 'Editar Produto';
+    const products = await api('/products');
+    const p = products.find((x) => String(x.id) === productId);
+    if (!p) return;
+    name.value = p.name || '';
+    sub.value = p.sub || '';
+    price.value = p.price || '';
+    oldPrice.value = p.old_price || '';
+    categoryId.value = p.category_id || '';
+    colors.value = (p.colors || []).join(', ');
+    sizes.value = (p.sizes || []).join(', ');
+    description.value = p.description || '';
+    rating.value = p.rating || '';
+    reviewsCount.value = p.reviews_count || '';
+    isActive.checked = p.is_active !== false;
+    images = p.images || [];
+    renderGallery();
+  }
+
+  document.getElementById('fileInput').addEventListener('change', handleUpload);
+}
+
+function renderGallery() {
+  document.getElementById('gallery').innerHTML = images.map((img) => `
+    <div class="thumb-wrap">
+      <img src="${escapeHtml(img.url)}" class="${img.isPrimary ? 'is-primary' : ''}" onclick="setPrimary(${img.id})" title="Clique para definir como principal"/>
+      <button class="remove-btn" onclick="removeImage(${img.id})">×</button>
+    </div>
+  `).join('');
+}
+
+async function handleUpload(e) {
+  const errEl = document.getElementById('uploadErr');
+  errEl.style.display = 'none';
+  if (!productId) {
+    errEl.textContent = 'Salve o produto primeiro, depois envie as imagens.';
+    errEl.style.display = 'block';
+    e.target.value = '';
+    return;
+  }
+  for (const file of e.target.files) {
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const { url } = await api('/media/upload', { method: 'POST', body: form });
+      const img = await api(`/products/${productId}/images`, {
+        method: 'POST',
+        body: JSON.stringify({ url, isPrimary: images.length === 0 }),
+      });
+      images.push(img);
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+    }
+  }
+  renderGallery();
+  e.target.value = '';
+}
+
+async function setPrimary(imageId) {
+  await api(`/products/${productId}/images`, {
+    method: 'POST',
+    body: JSON.stringify({ url: images.find((i) => i.id === imageId).url, isPrimary: true }),
+  });
+  images.forEach((i) => (i.isPrimary = i.id === imageId));
+  renderGallery();
+}
+
+async function removeImage(imageId) {
+  await api(`/products/${productId}/images/${imageId}`, { method: 'DELETE' });
+  images = images.filter((i) => i.id !== imageId);
+  renderGallery();
+}
+
+async function save() {
+  const payload = {
+    name: name.value,
+    sub: sub.value,
+    price: parseFloat(price.value),
+    oldPrice: oldPrice.value ? parseFloat(oldPrice.value) : null,
+    categoryId: categoryId.value || null,
+    colors: colors.value.split(',').map((s) => s.trim()).filter(Boolean),
+    sizes: sizes.value.split(',').map((s) => s.trim()).filter(Boolean),
+    description: description.value,
+    rating: rating.value ? parseFloat(rating.value) : 0,
+    reviewsCount: reviewsCount.value ? parseInt(reviewsCount.value, 10) : 0,
+    isActive: isActive.checked,
+  };
+  const msg = document.getElementById('saveMsg');
+  try {
+    if (productId) {
+      await api(`/products/${productId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      msg.textContent = 'Salvo!';
+      msg.className = 'success-msg';
+    } else {
+      const created = await api('/products', { method: 'POST', body: JSON.stringify(payload) });
+      window.location.href = `/admin/product-edit.html?id=${created.id}`;
+      return;
+    }
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'error-msg';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

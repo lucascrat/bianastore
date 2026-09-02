@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Pedidos</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <h2>Pedidos</h2>
+  <div class="card" style="padding:0">
+    <table>
+      <thead><tr><th>Pedido</th><th>Data</th><th>Itens</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="6">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('orders');
+
+async function load() {
+  await requireAuth();
+  const orders = await api('/orders');
+  const rows = document.getElementById('rows');
+  if (!orders.length) {
+    rows.innerHTML = '<tr><td colspan="6">Nenhum pedido ainda.</td></tr>';
+    return;
+  }
+  rows.innerHTML = orders.map((o) => `
+    <tr>
+      <td>${escapeHtml(o.order_number)}</td>
+      <td>${new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
+      <td>${o.items_count}</td>
+      <td>${fmtMoney(o.total)}</td>
+      <td><span class="badge ${o.status}">${escapeHtml(o.status_label)}</span></td>
+      <td><a class="btn secondary" href="/admin/order-detail.html?id=${o.id}">Ver</a></td>
+    </tr>
+  `).join('');
+}
+load();
+</script>
+</body>
+</html>

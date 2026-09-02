@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Login</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="card login-card">
+    <h1>BianaStore Admin</h1>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="password" placeholder="••••••••" autofocus/>
+    </div>
+    <button class="btn" style="width:100%;justify-content:center" onclick="login()">Entrar</button>
+    <div class="error-msg" id="err" style="display:none"></div>
+  </div>
+</div>
+<script src="admin.js"></script>
+<script>
+document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+async function login() {
+  const err = document.getElementById('err');
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: document.getElementById('password').value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao entrar');
+    window.location.href = '/admin/index.html';
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

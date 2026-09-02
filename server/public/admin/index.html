@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Produtos</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <div class="toolbar">
+    <h2>Produtos</h2>
+    <a class="btn" href="/admin/product-edit.html">+ Novo Produto</a>
+  </div>
+  <div class="card" style="padding:0">
+    <table>
+      <thead><tr><th></th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="6">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('products');
+
+async function load() {
+  await requireAuth();
+  const products = await api('/products');
+  const rows = document.getElementById('rows');
+  if (!products.length) {
+    rows.innerHTML = '<tr><td colspan="6">Nenhum produto ainda.</td></tr>';
+    return;
+  }
+  rows.innerHTML = products.map((p) => {
+    const img = (JSON.parse(JSON.stringify(p.images || [])).find((i) => i.isPrimary) || p.images?.[0] || {}).url || '';
+    return `
+      <tr>
+        <td>${img ? `<img class="thumb" src="${escapeHtml(img)}"/>` : ''}</td>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.category_name || '—')}</td>
+        <td>${fmtMoney(p.price)}</td>
+        <td>${p.is_active ? '<span class="badge delivered">Ativo</span>' : '<span class="badge inactive">Inativo</span>'}</td>
+        <td><a class="btn secondary" href="/admin/product-edit.html?id=${p.id}">Editar</a></td>
+      </tr>`;
+  }).join('');
+}
+load();
+</script>
+</body>
+</html>

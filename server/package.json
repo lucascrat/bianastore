@@ -1,0 +1,21 @@
+{
+  "name": "bianastore-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BianaStore API backend (Express + PostgreSQL + Cloudflare R2)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "migrate": "node db/migrate.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.658.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "multer": "^2.0.0",
+    "pg": "^8.13.0"
+  }
+}
