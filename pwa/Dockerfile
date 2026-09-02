@@ -12,5 +12,6 @@ COPY app.js /usr/share/nginx/html/
 COPY manifest.json /usr/share/nginx/html/
 COPY sw.js /usr/share/nginx/html/
 COPY icons/ /usr/share/nginx/html/icons/
+COPY fonts/ /usr/share/nginx/html/fonts/
 
 EXPOSE 80

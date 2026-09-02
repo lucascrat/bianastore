@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bianastore-v7'; // bumped: auth screen com header + botões separados entrar/cadastrar
+const CACHE_NAME = 'bianastore-v8'; // bumped: fonte Material Symbols auto-hospedada (sem dependência de CDN externo)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/fonts/material-symbols-outlined.woff2',
 ];
 
 // Install: cache static shell
@@ -31,9 +32,9 @@ self.addEventListener('fetch', e => {
   const { request } = e;
   const url = new URL(request.url);
 
-  // Skip non-GET and cross-origin font/CDN requests with passthrough
+  // Skip non-GET and cross-origin requests (font is now self-hosted, no external font CDN needed)
   if (request.method !== 'GET') return;
-  if (url.origin !== location.origin && !url.hostname.includes('fonts.g')) return;
+  if (url.origin !== location.origin) return;
 
   // Cache-first for same-origin static assets
   if (url.origin === location.origin) {
