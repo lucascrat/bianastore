@@ -29,7 +29,11 @@ async function load() {
   const o = await api(`/orders/${orderId}`);
   document.getElementById('title').textContent = `Pedido ${o.order_number}`;
   const addr = o.shipping_address || {};
+  const paymentBadge = { paid: '<span class="badge delivered">Pago</span>', pending: '<span class="badge processing">Aguardando pagamento</span>', failed: '<span class="badge cancelled">Falhou</span>', refunded: '<span class="badge inactive">Reembolsado</span>' };
   document.getElementById('content').innerHTML = `
+    <div class="card">
+      <p><strong>Pagamento:</strong> ${paymentBadge[o.payment_status] || o.payment_status} — ${escapeHtml(o.payment_method)}${o.installments > 1 ? ` em ${o.installments}x` : ''}</p>
+    </div>
     <div class="card">
       <div class="row">
         <div class="field"><label>Status</label>
