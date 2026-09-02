@@ -1,7 +1,8 @@
-const CACHE_NAME = 'bianastore-v1';
+const CACHE_NAME = 'bianastore-v2'; // bumped: index.html's inline script moved to app.js
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/app.js',
   '/manifest.json',
 ];
 

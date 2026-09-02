@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Vestido Midi Elegante</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Hanken+Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e7e8e9",
+                        "outline-variant": "#e3bdc3",
+                        "primary": "#b0004a",
+                        "on-surface-variant": "#5a4044",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#3f001c",
+                        "background": "#f8f9fa",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#fff2f3",
+                        "on-secondary-fixed-variant": "#474746",
+                        "inverse-primary": "#ffb2bf",
+                        "inverse-on-surface": "#f0f1f2",
+                        "outline": "#8e6f74",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "surface": "#f8f9fa",
+                        "on-primary-fixed": "#3f0016",
+                        "surface-container": "#edeeef",
+                        "primary-container": "#d81b60",
+                        "on-surface": "#191c1d",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "on-primary-fixed-variant": "#90003b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-tertiary-container": "#fff2f3",
+                        "tertiary": "#ad0059",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffd9e2",
+                        "tertiary-container": "#d12672",
+                        "surface-dim": "#d9dadb",
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#636262",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#bc004f",
+                        "surface-container-highest": "#e1e3e4",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffd9de",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-variant": "#e1e3e4",
+                        "secondary-container": "#e2dfde"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "xs": "8px",
+                        "margin-mobile": "16px",
+                        "sm": "16px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .gallery-scroll {
+            scroll-snap-type: x mandatory;
+        }
+        .gallery-snap {
+            scroll-snap-align: center;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg antialiased pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-white/70 dark:bg-black/70 backdrop-blur-md fixed top-0 w-full z-50 bg-transparent shadow-[0px_10px_30px_rgba(216,27,96,0.08)] flex justify-between items-center px-margin-mobile h-16">
+<button class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 duration-200" onclick="history.back()">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-lg text-headline-lg-mobile font-extrabold text-primary dark:text-primary-fixed-dim tracking-tighter">BianaStore</h1>
+<button class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 duration-200 relative">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="absolute -top-1 -right-1 bg-primary text-on-primary font-label-bold text-label-bold w-4 h-4 rounded-full flex items-center justify-center">2</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-16 max-w-4xl mx-auto">
+<!-- Image Gallery (Mobile: Horizontal Scroll, Desktop: Grid) -->
+<div class="w-full relative">
+<div class="flex overflow-x-auto gallery-scroll no-scrollbar md:grid md:grid-cols-2 md:gap-4 md:px-margin-desktop md:pt-md h-[70vh] md:h-auto">
+<div class="w-full flex-shrink-0 gallery-snap md:w-full md:rounded-xl overflow-hidden h-full">
+<img class="w-full h-full object-cover" data-alt="A beautiful, elegant midi dress in a soft blush color, modeled by a woman in a bright, modern studio. The lighting is high-key and soft, creating a clean, airy aesthetic consistent with a premium e-commerce brand. The focus is on the flowing fabric and elegant cut of the dress." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTCnuC_DeoKd7UM6RBq3-QVG9hGoJ8cozOJ8eGLCG0PGYWMOVe58ZXlVtNp8S0yGUH32ZQSgmXqKBnM1DUG2Ie7GD-twV1C_vbwCu_UKFsjWGWczilAc3n2TCvgO1PKYvJLysneVA86J6LnHJcUIfpaXx6M33lv9jO38ifuq68Zgn5pZwm9nWDaSdwM7g_pC38l-QtXH9W-lYWxyLgy9hw1lHkjNW7jd8wGZKQDUa7rjOvBkV2vv9u"/>
+</div>
+<div class="w-full flex-shrink-0 gallery-snap md:w-full md:rounded-xl overflow-hidden h-full hidden md:block">
+<img class="w-full h-full object-cover" data-alt="Close-up detail shot of the elegant midi dress fabric. The texture of the high-quality material is visible, with soft folds catching the light. The setting is bright and minimalist, emphasizing the premium nature of the clothing. Light tones and elegant styling are paramount." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAxFTYue12jq-gLTiGjivIq0vSSu7h8wGlwEGq_WXepLVlONa43pk4xE73VFEN9xtgtgtEjdnNmp9RL0lLd6UXz9Xy4zc3_Z3eRX75Oh9X6mMQA7rSkS9ahT1R92mPw2amfXjW9LrLhzpPM75sLp3Wsf0wiU-l-Z_2bsGi3-h6Tz9h7hkBegEKVQOTZAz7Z6leRDOjn2nvcs7jn0K48ziNm0S9MrP0_s1HqGnSX7EXlePpHA6JZt0f"/>
+</div>
+<div class="w-full flex-shrink-0 gallery-snap md:w-full md:rounded-xl overflow-hidden h-full hidden md:block">
+<img class="w-full h-full object-cover" data-alt="Back view of the elegant midi dress, showing a subtle detailing or cut. The model is standing against a clean, light-colored background. The overall mood is sophisticated and modern, fitting for a high-end online boutique." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuZ34SqMJPC7YNHDR7hK4phVt-hqGiZeEjaUnMjpNqMc8P9CLnT4iCbJdg0jWPanAtgR34LEx38CKW9M0aQTL7OG8ixUZWn8Q9z0k7Kyk4JHnwVSv8UgT5Pez8MvS6FLGuQw_zqmM42TSNzkbZtsjv8p-6NatZuZcZ2wU-T31mh0LNZx6tnEXJjWHwzSn15aKv6sP64zbd55ht2RCHsoGY0d0_bZogbPAoshPMLNJ8HEjF_5o_ZBv7"/>
+</div>
+</div>
+<!-- Gallery Indicators (Mobile only) -->
+<div class="absolute bottom-4 left-0 w-full flex justify-center gap-2 md:hidden">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-white/50"></div>
+<div class="w-2 h-2 rounded-full bg-white/50"></div>
+</div>
+</div>
+<!-- Product Info -->
+<section class="px-margin-mobile md:px-margin-desktop py-md bg-surface-container-lowest rounded-t-xl -mt-4 relative z-10 shadow-[0px_-10px_30px_rgba(0,0,0,0.05)] md:shadow-none md:mt-0 md:rounded-none">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">Vestido Midi Elegante</h2>
+<p class="font-body-sm text-body-sm text-secondary">Vestido fluido em crepe de seda</p>
+</div>
+<div class="font-price-tag text-price-tag text-primary">R$ 289,90</div>
+</div>
+<!-- Size Selection -->
+<div class="mb-lg">
+<div class="flex justify-between items-center mb-2">
+<span class="font-title-md text-title-md text-on-surface">Tamanho</span>
+<button class="font-label-bold text-label-bold text-primary underline">Guia de Medidas</button>
+</div>
+<div class="flex gap-3">
+<button class="w-12 h-12 rounded-full border border-outline text-on-surface-variant font-label-bold text-label-bold flex items-center justify-center hover:border-primary hover:text-primary transition-colors">P</button>
+<button class="w-12 h-12 rounded-full border-2 border-primary bg-primary-container/10 text-primary font-label-bold text-label-bold flex items-center justify-center">M</button>
+<button class="w-12 h-12 rounded-full border border-outline text-on-surface-variant font-label-bold text-label-bold flex items-center justify-center hover:border-primary hover:text-primary transition-colors">G</button>
+<button class="w-12 h-12 rounded-full border border-outline text-on-surface-variant font-label-bold text-label-bold flex items-center justify-center hover:border-primary hover:text-primary transition-colors">GG</button>
+</div>
+</div>
+<!-- Description -->
+<div class="mb-lg">
+<h3 class="font-title-md text-title-md text-on-surface mb-2">Descrição</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    O Vestido Midi Elegante é a escolha perfeita para ocasiões especiais ou um look sofisticado no dia a dia. Confeccionado em crepe de seda de alta qualidade, possui caimento fluido, decote em V sutil e fenda lateral que adiciona um toque de modernidade. 
+                </p>
+</div>
+<!-- Add to Cart (Fixed on Mobile, Inline on Desktop) -->
+<div class="fixed bottom-0 left-0 w-full p-4 bg-surface-container-lowest/80 backdrop-blur-md border-t border-surface-variant md:relative md:bg-transparent md:border-none md:p-0 md:mb-xl z-40">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-4 rounded-full shadow-[0px_10px_20px_rgba(176,0,74,0.3)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+                    Adicionar à Sacola
+                </button>
+</div>
+</section>
+<!-- Suggestions -->
+<section class="py-lg bg-surface-container-low mb-20 md:mb-0">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile px-margin-mobile md:px-margin-desktop mb-md text-on-surface">Sugestões para você</h3>
+<div class="flex overflow-x-auto gap-4 px-margin-mobile md:px-margin-desktop no-scrollbar snap-x">
+<!-- Suggestion Card 1 -->
+<div class="w-40 md:w-56 flex-shrink-0 snap-start bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="h-56 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A stylish tailored blazer in a neutral cream tone, displayed on a clean background. The aesthetic is modern and sophisticated, aligning with the light, elegant visual style of the main product. High-key lighting highlights the fabric texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK5AVnGBYaT6MwVyYgzItb_jWKDVZRHRCJpdG8rX2soONEznsFVmUIp6rz7f2MAGOKbOycGkmtUAzhG_5oDUNePugGWxneq6FRwkzQWJfMwe9Im_Vfa3ZqrRzCoK-r_DYK5aVFM40KpXyzHlb-lJ23ajDWzq0nbtMe2Vf6UpumDC-gOGWy8un5BkaTJ5GCMH5IaLHFWzfali4cWvzaPHOaGxf9TGRXbzNgXb0zAU1I_fezWpVvH5U4"/>
+<div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded font-price-tag text-[14px] text-primary">R$ 349,00</div>
+</div>
+<div class="p-3">
+<h4 class="font-title-md text-[14px] text-on-surface truncate">Blazer Alfaiataria</h4>
+</div>
+</div>
+<!-- Suggestion Card 2 -->
+<div class="w-40 md:w-56 flex-shrink-0 snap-start bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="h-56 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A pair of elegant wide-leg trousers in a soft pastel color. The image is bright and minimalist, focusing on the modern silhouette of the pants. The styling is consistent with a premium, digitally native e-commerce brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ6He_zMe1ypA_DFOeCVjQAwnXQkieapHPbOAMzWQIXpFichyymE8ijm8ju2OAv_yx6cP1S3wfQui1VpPtFVdbdLXRrpiRIw3HEhh_c5GO2tM7y2omUfe4cLl1wjG734Y1Ici3IacbQOVnYBq6A8BMNSD24QM4TIX4hdHUW3hLU_RHWWiU0MpqQouLaa6VBh7OKmjdLsK7AaC16xyuRcQ9YXlLYJXWwRXszRfZysvnBvgRRo3yNLKR"/>
+<div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded font-price-tag text-[14px] text-primary">R$ 199,90</div>
+</div>
+<div class="p-3">
+<h4 class="font-title-md text-[14px] text-on-surface truncate">Calça Pantalona</h4>
+</div>
+</div>
+<!-- Suggestion Card 3 -->
+<div class="w-40 md:w-56 flex-shrink-0 snap-start bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="h-56 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A delicate silk camisole top in a subtle champagne hue. The lighting is soft and airy, highlighting the luxurious feel of the fabric. The image fits perfectly within a modern, light-mode fashion catalog." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE11Uooq-9rOkMHopokDEcOOylf6xsTvO0ZGAtry05i6_Fbhf7Qr85LJZeP7FolfWwbFa84jRXtj3_yrJcz4kz0ZWgUqkSVGG7r0CcSyg1g6W5_8e_7yflRKO_hdi8giGD7PY0N_qve16udFpX5Vaqc2cduKt-q_H84vNwezB7O0GAtZ-4pyWByj-nNt3YFoCWjri_TOaQwIwTPhH9xFPyFcOZX9l4k75YhbijPMqmZWR7xJvGrsgH"/>
+<div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded font-price-tag text-[14px] text-primary">R$ 129,90</div>
+</div>
+<div class="p-3">
+<h4 class="font-title-md text-[14px] text-on-surface truncate">Top de Seda</h4>
+</div>
+</div>
+<!-- Suggestion Card 4 -->
+<div class="w-40 md:w-56 flex-shrink-0 snap-start bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<div class="h-56 bg-surface-variant relative">
+<img class="w-full h-full object-cover" data-alt="A chic leather crossbody bag in a light taupe color. The accessory is photographed against a minimalist backdrop, emphasizing its clean lines and premium hardware. The mood is sophisticated and contemporary." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrvbu3dLiadcICe34-UNnIVhlHiOo3MwxH75ZatWvylWCN_x8JlPP5oag9HzJpfPMITccKk3v2d2RzTGTWp4wpk7CP01WYHWYa2zlExDOce9jeZmPU-nGN5TGDYjQoKpGCCHTzKaEkGMdjSVelbFr8CvFzVue96lutcWo4z416nTzWK_I_2KZ7XgUONxblLlZt_srxFZSau_gLQH5UsFC_g-Vjn7tzQsBakcpTsf_3ocOeP4xNUq4S"/>
+<div class="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-2 py-1 rounded font-price-tag text-[14px] text-primary">R$ 259,00</div>
+</div>
+<div class="p-3">
+<h4 class="font-title-md text-[14px] text-on-surface truncate">Bolsa Transversal</h4>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Navigation suppressed as per 'Linear/Transactional' or specific page intent (Product Detail) -->
+</body></html>

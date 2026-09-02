@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Notificações</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#b0004a",
+                      "secondary-container": "#e2dfde",
+                      "inverse-surface": "#2e3132",
+                      "primary-fixed-dim": "#ffb2bf",
+                      "inverse-on-surface": "#f0f1f2",
+                      "secondary-fixed": "#e5e2e1",
+                      "tertiary-fixed-dim": "#ffb1c7",
+                      "surface-tint": "#bc004f",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#d12672",
+                      "secondary": "#5f5e5e",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#e7e8e9",
+                      "on-surface": "#191c1d",
+                      "primary-fixed": "#ffd9de",
+                      "on-background": "#191c1d",
+                      "surface": "#f8f9fa",
+                      "tertiary-fixed": "#ffd9e2",
+                      "on-secondary-fixed-variant": "#474746",
+                      "surface-container-lowest": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-container-highest": "#e1e3e4",
+                      "on-tertiary-fixed": "#3f001c",
+                      "on-primary-container": "#fff2f3",
+                      "background": "#f8f9fa",
+                      "primary-container": "#d81b60",
+                      "surface-dim": "#d9dadb",
+                      "surface-bright": "#f8f9fa",
+                      "on-secondary-container": "#636262",
+                      "on-tertiary-fixed-variant": "#8e0048",
+                      "error": "#ba1a1a",
+                      "on-primary-fixed-variant": "#90003b",
+                      "outline": "#8e6f74",
+                      "outline-variant": "#e3bdc3",
+                      "on-surface-variant": "#5a4044",
+                      "inverse-primary": "#ffb2bf",
+                      "surface-container-low": "#f3f4f5",
+                      "on-tertiary-container": "#fff2f3",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#e1e3e4",
+                      "surface-container": "#edeeef",
+                      "on-primary-fixed": "#3f0016",
+                      "on-secondary": "#ffffff",
+                      "tertiary": "#ad0059",
+                      "on-secondary-fixed": "#1c1b1b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "16px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "base": "4px",
+                      "xl": "64px",
+                      "lg": "40px",
+                      "md": "24px",
+                      "gutter": "16px",
+                      "xs": "8px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-bold": [
+                              "Hanken Grotesk"
+                      ],
+                      "title-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "price-tag": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-sm": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "title-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "price-tag": [
+                              "20px",
+                              {
+                                      "lineHeight": "1",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ]
+              }
+            },
+          }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased overflow-x-hidden pt-16 pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-xl bg-surface/70 shadow-[0px_2px_10px_rgba(216,27,96,0.05)]">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full">
+<button class="text-secondary hover:opacity-80 transition-opacity active:scale-95 flex items-center justify-center p-2 -ml-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary md:font-headline-lg md:text-headline-lg">Notificações</h1>
+<button class="text-secondary hover:opacity-80 transition-opacity active:scale-95 flex items-center justify-center p-2 -mr-2 rounded-full hover:bg-surface-variant/50">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-3xl mx-auto w-full px-margin-mobile mt-md">
+<!-- Filter Tabs (Glassmorphism) -->
+<div class="flex overflow-x-auto gap-xs pb-sm mb-sm no-scrollbar relative z-10 sticky top-[72px]">
+<button class="px-md py-2 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold whitespace-nowrap shadow-sm">
+                Todas
+            </button>
+<button class="px-md py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold whitespace-nowrap hover:bg-surface-variant transition-colors border border-outline-variant/30">
+                Pedidos
+            </button>
+<button class="px-md py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold whitespace-nowrap hover:bg-surface-variant transition-colors border border-outline-variant/30">
+                Promoções
+            </button>
+</div>
+<!-- Notifications List -->
+<div class="flex flex-col gap-sm">
+<!-- Notification: Pedido (Unread) -->
+<div class="relative bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_16px_rgba(216,27,96,0.04)] border border-outline-variant/20 hover:shadow-[0px_8px_24px_rgba(216,27,96,0.08)] transition-shadow cursor-pointer overflow-hidden group">
+<!-- Unread Indicator -->
+<div class="absolute top-md right-md w-3 h-3 bg-primary-container rounded-full animate-pulse shadow-[0_0_8px_rgba(216,27,96,0.5)]"></div>
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center shrink-0 text-on-surface-variant group-hover:bg-primary-fixed group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="local_shipping" data-weight="fill" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div class="flex-1 pr-6">
+<h3 class="font-title-md text-title-md text-on-surface mb-1">Atualização de Pedido</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Seu pedido <span class="font-bold text-primary">#12345</span> foi enviado! Clique para rastrear a entrega em tempo real.</p>
+<span class="font-label-bold text-label-bold text-secondary mt-2 block opacity-70">Agora mesmo</span>
+</div>
+</div>
+</div>
+<!-- Notification: Promoção (Unread) -->
+<div class="relative bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_16px_rgba(216,27,96,0.04)] border border-outline-variant/20 hover:shadow-[0px_8px_24px_rgba(216,27,96,0.08)] transition-shadow cursor-pointer overflow-hidden group">
+<!-- Unread Indicator -->
+<div class="absolute top-md right-md w-3 h-3 bg-primary-container rounded-full shadow-[0_0_8px_rgba(216,27,96,0.5)]"></div>
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center shrink-0 text-tertiary-container group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="sell" data-weight="fill" style="font-variation-settings: 'FILL' 1;">sell</span>
+</div>
+<div class="flex-1 pr-6">
+<h3 class="font-title-md text-title-md text-on-surface mb-1">Oferta Exclusiva</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ganhe <strong class="text-tertiary">15% OFF</strong>! Use o cupom <span class="bg-primary-fixed px-1 rounded text-on-primary-fixed-variant font-mono text-xs font-bold">BIANA15</span> na sua próxima compra.</p>
+<span class="font-label-bold text-label-bold text-secondary mt-2 block opacity-70">Há 2 horas</span>
+</div>
+</div>
+</div>
+<!-- Notification: Estoque (Read) -->
+<div class="relative bg-surface-container-lowest/50 rounded-xl p-md border border-outline-variant/10 cursor-pointer overflow-hidden group hover:bg-surface-container-lowest transition-colors">
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-secondary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="sparkles" data-weight="fill" style="font-variation-settings: 'FILL' 1;">arrow_back_ios_new</span>
+</div>
+<div class="flex-1 pr-6 opacity-80 group-hover:opacity-100 transition-opacity">
+<h3 class="font-title-md text-title-md text-on-surface mb-1">De Volta ao Estoque!</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">O <strong>Vestido Floral Verão</strong> voltou! Garanta o seu antes que acabe novamente.</p>
+<!-- Small Image preview for product notification -->
+<div class="mt-3 flex gap-2">
+<div class="w-16 h-16 rounded-lg overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A brightly lit close-up of a floral summer dress in a high-key studio setting. The fabric features vibrant pink and red flowers on a pristine white background. The aesthetic is modern retail, light mode, clean and crisp, fitting the chromatic pulse palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFC8ItcmS2oJcJdX-CAAiO4FsCoygItIjdrV7XogAxwRjDfRpJKda_Y6UyrOfdDzV9YQoyikeLwI_lcDt3HTXuVTC0G3bi529CuqdaymcRb7XVC9KB10ihAkdGCSGn_AcP5dCjCzdatowuVkueq_6-45genkhzhpwBrn9z_V2gGVL40AwkQH4ZwnhH9N18gLvZKT_XjxWvOOvJp9upGlIwGVg0xXn_-PY90aJgvl3sluWXwk3-lg26"/>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-secondary mt-2 block opacity-70">Ontem</span>
+</div>
+</div>
+</div>
+<!-- Notification: Boas Vindas (Read) -->
+<div class="relative bg-surface-container-lowest/50 rounded-xl p-md border border-outline-variant/10 cursor-pointer overflow-hidden group hover:bg-surface-container-lowest transition-colors">
+<div class="flex gap-md items-start">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center shrink-0 text-secondary">
+<span class="material-symbols-outlined" data-icon="waving_hand" data-weight="fill" style="font-variation-settings: 'FILL' 1;">waving_hand</span>
+</div>
+<div class="flex-1 pr-6 opacity-70 group-hover:opacity-100 transition-opacity">
+<h3 class="font-title-md text-title-md text-on-surface mb-1">Bem-vinda, Maria!</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ficamos felizes em ter você na BianaStore. Comece explorando as tendências da semana escolhidas para você.</p>
+<span class="font-label-bold text-label-bold text-secondary mt-2 block opacity-70">Há 3 dias</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<!-- Note: Profile is selected based on common app architectures where Notifications often live under or near Profile, or it's a general global view. However, there's no "Notifications" tab in the requested BottomNavBar. I'll highlight nothing or select Home as default fallback if forced, but semantically, none of these perfectly map to "Notifications". I will highlight Profile as it's the closest user-centric tab. -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl backdrop-blur-xl border-t border-outline-variant/30 shadow-[0px_-4px_20px_rgba(0,0,0,0.04)] bg-surface/70">
+<div class="flex justify-around items-center h-20 px-2 pb-safe w-full">
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-bold text-label-bold">Início</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="search">search</span>
+<span class="font-label-bold text-label-bold">Explorar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-label-bold text-label-bold">Sacola</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="favorite">favorite</span>
+<span class="font-label-bold text-label-bold">Favoritos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary relative after:content-[''] after:absolute after:-top-1 after:w-1 after:h-1 after:bg-primary after:rounded-full hover:text-primary transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-bold text-label-bold">Perfil</span>
+</a>
+</div>
+</nav>
+<style>
+        /* Hide scrollbar for horizontal scrolling tabs but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Carrinho de Compras</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#b0004a",
+                        "on-background": "#191c1d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#fff2f3",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-bright": "#f8f9fa",
+                        "secondary": "#5f5e5e",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-container-low": "#f3f4f5",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#5a4044",
+                        "on-tertiary-fixed": "#3f001c",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#474746",
+                        "outline-variant": "#e3bdc3",
+                        "primary-container": "#d81b60",
+                        "surface-tint": "#bc004f",
+                        "surface-dim": "#d9dadb",
+                        "background": "#f8f9fa",
+                        "on-tertiary-container": "#fff2f3",
+                        "primary-fixed": "#ffd9de",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1d",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "outline": "#8e6f74",
+                        "tertiary-fixed": "#ffd9e2",
+                        "on-primary-fixed": "#3f0016",
+                        "surface-container": "#edeeef",
+                        "inverse-primary": "#ffb2bf",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-secondary-container": "#636262",
+                        "tertiary": "#ad0059",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f0f1f2",
+                        "tertiary-container": "#d12672",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#90003b",
+                        "secondary-container": "#e2dfde",
+                        "surface-variant": "#e1e3e4",
+                        "tertiary-fixed-dim": "#ffb1c7"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "sm": "16px",
+                        "gutter": "16px",
+                        "lg": "40px",
+                        "md": "24px",
+                        "xl": "64px",
+                        "margin-desktop": "32px",
+                        "xs": "8px",
+                        "margin-mobile": "16px",
+                        "base": "4px"
+                    },
+                    fontFamily: {
+                        "title-md": ["Plus Jakarta Sans"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-bold": ["Hanken Grotesk"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    fontSize: {
+                        "title-md": ["18px", { lineHeight: "1.4", fontWeight: "600" }],
+                        "price-tag": ["20px", { lineHeight: "1", fontWeight: "800" }],
+                        "body-lg": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+                        "label-bold": ["12px", { lineHeight: "1", letterSpacing: "0.05em", fontWeight: "700" }],
+                        "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "700" }],
+                        "display-lg": ["48px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "800" }],
+                        "body-sm": ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+                        "headline-lg-mobile": ["24px", { lineHeight: "1.2", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-black/70 backdrop-blur-md shadow-[0px_10px_30px_rgba(216,27,96,0.08)] bg-transparent flex justify-between items-center px-margin-mobile h-16">
+<button class="text-secondary dark:text-secondary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="font-display-lg text-headline-lg-mobile font-extrabold text-primary dark:text-primary-fixed-dim tracking-tighter">
+            BianaStore
+        </div>
+<button class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-32 px-margin-mobile max-w-3xl mx-auto md:px-margin-desktop">
+<div class="flex items-center justify-between mb-md">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Meu Carrinho</h1>
+<span class="font-body-sm text-body-sm text-secondary">2 itens</span>
+</div>
+<!-- Cart Items List -->
+<div class="flex flex-col gap-sm">
+<!-- Cart Item 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-xs md:p-sm flex gap-sm shadow-[0px_5px_15px_rgba(216,27,96,0.04)] relative">
+<img class="w-24 h-32 md:w-32 md:h-40 object-cover rounded-lg bg-surface-container-low" data-alt="A high-quality e-commerce flat lay photo of a flowing, elegant floral midi dress in a light pink and cream color palette. The dress is displayed on a crisp, pristine white background, illuminated by soft, bright, high-key studio lighting that creates a clean, premium, and airy modern shopping aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbwUS0htVthoqFLDRwkj3B6iWftMuEd_qOW7Rj3BGY_JWxPaQ4X7qAnqbrsYFDrF_B6D7Pwp2EMTvezWhhDjVD7kinD5MtrBPLa_opH2NwvA_XcwSNlGD68aGqGKi6D3V4LvsRFuLYLC6c9rF21a1GadIUF_E5NR_JHtexlUvgxQMW5JBfsGbBOqrbmwNXBB9p4qfNmDdOn9agenkXzhJLJWbHecgwDz_tXMo7a1JkbSUof5aM0kV7"/>
+<div class="flex flex-col justify-between flex-grow py-1">
+<div>
+<h2 class="font-title-md text-title-md text-on-surface line-clamp-1">Vestido Midi Elegante</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Tamanho: M</p>
+</div>
+<div class="flex flex-col mt-2">
+<span class="font-body-sm text-body-sm text-secondary line-through">R$ 299,90</span>
+<span class="font-price-tag text-price-tag text-primary">R$ 239,90</span>
+</div>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center bg-surface-container-low rounded-full px-1 border border-transparent focus-within:border-primary transition-colors">
+<button aria-label="Diminuir quantidade" class="w-8 h-8 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-title-md text-title-md text-on-background w-6 text-center">1</span>
+<button aria-label="Aumentar quantidade" class="w-8 h-8 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<button aria-label="Remover item" class="text-secondary hover:text-error transition-colors p-2 active:scale-95">
+<span class="material-symbols-outlined">delete_outline</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Cart Item 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-xs md:p-sm flex gap-sm shadow-[0px_5px_15px_rgba(216,27,96,0.04)] relative">
+<img class="w-24 h-32 md:w-32 md:h-40 object-cover rounded-lg bg-surface-container-low" data-alt="A professional product shot of a minimalist, luxurious white silk blouse. The blouse is neatly folded or elegantly draped against a light grey, almost white backdrop. The lighting is extremely soft and diffused, emphasizing the smooth texture and sheen of the fabric, perfectly matching a sophisticated, high-end light-mode retail environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa919TVTKCb-Rdy0xUSdtt01sxzcxKeakNrtWI-dKyIk1WYcyW_g3vubzgawLRZ3aWV0iTietPoenr3xtwPkeOmTlYKx-df66GWRWLg9jhd8kDuVMOKS3jMzy1w4r8XBWdl_IX6Z_VWfXhbibeUraigmqORkxo9bCV458ub9Li84i_qFmPPWD8jxeYxDBuffZIdcgQXzy-dFAOqXDTQS71sfOQVnEWrTgxIvJAuHelXMwDwo3HJO6R"/>
+<div class="flex flex-col justify-between flex-grow py-1">
+<div>
+<h2 class="font-title-md text-title-md text-on-surface line-clamp-1">Blusa de Seda Clássica</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Tamanho: P</p>
+</div>
+<div class="flex flex-col mt-2">
+<span class="font-price-tag text-price-tag text-on-background mt-auto">R$ 159,90</span>
+</div>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center bg-surface-container-low rounded-full px-1 border border-transparent focus-within:border-primary transition-colors">
+<button aria-label="Diminuir quantidade" class="w-8 h-8 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<span class="font-title-md text-title-md text-on-background w-6 text-center">1</span>
+<button aria-label="Aumentar quantidade" class="w-8 h-8 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<button aria-label="Remover item" class="text-secondary hover:text-error transition-colors p-2 active:scale-95">
+<span class="material-symbols-outlined">delete_outline</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Order Summary & Checkout -->
+<div class="mt-lg bg-surface-container-lowest rounded-xl p-md shadow-[0px_10px_30px_rgba(216,27,96,0.05)] border border-surface-container-low backdrop-blur-md">
+<h3 class="font-title-md text-title-md text-on-surface mb-md">Resumo do Pedido</h3>
+<div class="flex flex-col gap-3 font-body-lg text-body-lg text-on-surface-variant">
+<div class="flex justify-between">
+<span>Subtotal</span>
+<span>R$ 399,80</span>
+</div>
+<div class="flex justify-between">
+<span>Descontos</span>
+<span class="text-primary">- R$ 60,00</span>
+</div>
+<div class="flex justify-between">
+<span>Frete</span>
+<span class="text-secondary">Calcular</span>
+</div>
+<hr class="border-surface-container-high my-2"/>
+<div class="flex justify-between items-end">
+<span class="font-title-md text-title-md text-on-surface">Total</span>
+<span class="font-display-lg text-headline-lg-mobile text-primary tracking-tight">R$ 339,80</span>
+</div>
+</div>
+<button class="mt-md w-full py-4 rounded-full bg-gradient-to-b from-surface-tint to-primary text-on-primary font-title-md text-title-md flex items-center justify-center gap-2 shadow-[0px_8px_20px_rgba(216,27,96,0.25)] hover:opacity-90 active:scale-[0.98] transition-all duration-200">
+                Finalizar Compra
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-white/70 dark:bg-black/70 backdrop-blur-md shadow-[0px_-10px_30px_rgba(0,0,0,0.05)] bg-transparent flex justify-around items-center h-20 px-sm pb-safe md:hidden">
+<!-- Inactive: Home -->
+<button class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim opacity-70 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold mt-1">Home</span>
+</button>
+<!-- Active: Shop (Cart context maps best to Shop in this taxonomy) -->
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim scale-110 transition-all hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 duration-150 relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span class="font-label-bold text-label-bold mt-1">Shop</span>
+<!-- Notification Dot for items in cart -->
+<span class="absolute top-0 right-2 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(216,27,96,0.8)]"></span>
+</button>
+<!-- Inactive: Profile -->
+<button class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim opacity-70 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-bold text-label-bold mt-1">Profile</span>
+</button>
+</nav>
+</body></html>

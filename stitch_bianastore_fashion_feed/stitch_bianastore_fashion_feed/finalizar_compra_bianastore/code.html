@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Finalizar Compra</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f0f1f2",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-secondary-container": "#636262",
+                        "on-surface": "#191c1d",
+                        "surface-container-high": "#e7e8e9",
+                        "background": "#f8f9fa",
+                        "outline-variant": "#e3bdc3",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "tertiary": "#ad0059",
+                        "surface-dim": "#d9dadb",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary-container": "#fff2f3",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#d12672",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#ffd9e2",
+                        "secondary-fixed": "#e5e2e1",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "surface-container": "#edeeef",
+                        "inverse-surface": "#2e3132",
+                        "outline": "#8e6f74",
+                        "on-primary-container": "#fff2f3",
+                        "inverse-primary": "#ffb2bf",
+                        "on-error": "#ffffff",
+                        "primary-container": "#d81b60",
+                        "primary": "#b0004a",
+                        "on-primary-fixed": "#3f0016",
+                        "on-primary-fixed-variant": "#90003b",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f4f5",
+                        "secondary-container": "#e2dfde",
+                        "surface": "#f8f9fa",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#191c1d",
+                        "surface-tint": "#bc004f",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#3f001c",
+                        "surface-variant": "#e1e3e4",
+                        "on-surface-variant": "#5a4044",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "primary-fixed": "#ffd9de",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#c8c6c5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "md": "24px",
+                        "xs": "8px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "base": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-bold": ["Hanken Grotesk"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg text-body-lg pb-[120px] md:pb-0 pt-16">
+<!-- TopAppBar (Transactional - Hidden Nav Elements, Simplified) -->
+<header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md shadow-[0px_10px_30px_rgba(216,27,96,0.08)]">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-7xl mx-auto">
+<button aria-label="Voltar" class="text-on-background hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-background">Finalizar Compra</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop mt-8 grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Left Column: Details -->
+<div class="md:col-span-7 lg:col-span-8 flex flex-col gap-6">
+<!-- Shipping Address -->
+<section class="bg-surface-container-lowest rounded-xl p-sm md:p-md shadow-sm border border-outline-variant/30">
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+                        Endereço de Entrega
+                    </h2>
+<button class="text-primary font-label-bold text-label-bold hover:underline bg-transparent border-none cursor-pointer">Alterar</button>
+</div>
+<div class="bg-surface p-sm rounded-lg border border-surface-variant">
+<p class="font-bold text-on-surface mb-1">Rua das Flores, 123</p>
+<p class="text-on-surface-variant font-body-sm text-body-sm">Apto 45 - Bairro Jardim Primavera</p>
+<p class="text-on-surface-variant font-body-sm text-body-sm">São Paulo, SP - 01234-567</p>
+<p class="text-on-surface-variant font-body-sm text-body-sm mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="person">person</span>
+                        Maria Silva
+                    </p>
+</div>
+</section>
+<!-- Payment Methods -->
+<section class="bg-surface-container-lowest rounded-xl p-sm md:p-md shadow-sm border border-outline-variant/30">
+<h2 class="font-title-md text-title-md text-on-surface flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+                    Método de Pagamento
+                </h2>
+<div class="flex flex-col gap-3">
+<!-- Credit Card Option -->
+<label class="relative flex items-start p-sm rounded-lg border-2 border-primary bg-primary-fixed/20 cursor-pointer transition-colors group">
+<div class="flex items-center h-5">
+<input checked="" class="h-4 w-4 text-primary focus:ring-primary border-outline-variant" name="payment_method" type="radio" value="credit_card"/>
+</div>
+<div class="ml-3 flex-1">
+<span class="block font-title-md text-title-md text-on-surface mb-1 flex items-center gap-2">
+                                Cartão de Crédito
+                                <span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="credit_card">credit_card</span>
+</span>
+<!-- Card Form (Expanded when selected) -->
+<div class="mt-4 flex flex-col gap-3 w-full">
+<div class="relative">
+<input aria-label="Número do Cartão" class="w-full bg-surface-container-highest border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg p-2 text-on-surface font-body-sm text-body-sm transition-all" placeholder="Número do Cartão" type="text"/>
+<span class="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant" data-icon="credit_card">credit_card</span>
+</div>
+<div class="relative">
+<input aria-label="Nome Impresso" class="w-full bg-surface-container-highest border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg p-2 text-on-surface font-body-sm text-body-sm transition-all" placeholder="Nome Impresso no Cartão" type="text"/>
+</div>
+<div class="flex gap-3">
+<div class="relative flex-1">
+<input aria-label="Validade" class="w-full bg-surface-container-highest border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg p-2 text-on-surface font-body-sm text-body-sm transition-all" placeholder="Validade (MM/AA)" type="text"/>
+</div>
+<div class="relative flex-1">
+<input aria-label="CVV" class="w-full bg-surface-container-highest border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg p-2 text-on-surface font-body-sm text-body-sm transition-all" placeholder="CVV" type="text"/>
+<span class="material-symbols-outlined absolute right-2 top-2 text-on-surface-variant text-[20px]" data-icon="info">info</span>
+</div>
+</div>
+</div>
+</div>
+</label>
+<!-- PIX Option -->
+<label class="relative flex items-start p-sm rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors group">
+<div class="flex items-center h-5">
+<input class="h-4 w-4 text-primary focus:ring-primary border-outline-variant" name="payment_method" type="radio" value="pix"/>
+</div>
+<div class="ml-3 flex-1">
+<span class="block font-title-md text-title-md text-on-surface mb-1 flex items-center gap-2">
+                                PIX
+                                <span class="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Mais Rápido</span>
+</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">Aprovação instantânea. 5% de desconto.</span>
+</div>
+</label>
+<!-- Boleto Option -->
+<label class="relative flex items-start p-sm rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors group">
+<div class="flex items-center h-5">
+<input class="h-4 w-4 text-primary focus:ring-primary border-outline-variant" name="payment_method" type="radio" value="boleto"/>
+</div>
+<div class="ml-3 flex-1">
+<span class="block font-title-md text-title-md text-on-surface mb-1 flex items-center gap-2">
+                                Boleto Bancário
+                                <span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="receipt_long">receipt_long</span>
+</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">Vencimento em 3 dias úteis.</span>
+</div>
+</label>
+</div>
+</section>
+</div>
+<!-- Right Column: Summary & Items -->
+<div class="md:col-span-5 lg:col-span-4 flex flex-col gap-6">
+<!-- Order Items Preview -->
+<section class="bg-surface-container-lowest rounded-xl p-sm shadow-sm border border-outline-variant/30">
+<h3 class="font-title-md text-title-md text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="shopping_bag">shopping_bag</span>
+                    Sua Sacola (2)
+                </h3>
+<div class="flex flex-col gap-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+<!-- Item 1 -->
+<div class="flex gap-3 items-center bg-surface p-2 rounded-lg">
+<div class="w-16 h-16 rounded-md overflow-hidden bg-surface-container flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A close-up studio shot of a vibrant, neon-pink modern crop top against a stark white background. The fabric texture is clearly visible, illuminated by bright, high-key lighting that emphasizes a sleek, digital-native e-commerce aesthetic. The mood is energetic and youthful, fitting a fast-paced retail environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeHFkC7lRJaAeBBURw4xU0c_I0Fpwbd9H_jEvyea5xpycXSWNsW6Wr_Ic24gKgB-s4xXY1qUowOezLfjkb_OWe4kYOTdNqwSo-7uXcHPbiS_55EJuccXBMX0SFJkfuHXoxNDqM15bJ4v6ikBwMiwHFch6aaGRDn4GkYg6DdCxAKasvmFcbkVCUpYJXuvc5iCGqS4P_bizReyX2cyM5xBoPxdRpZn6KVVDmGRccb2UY2khJBxc9ws6C"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-title-md text-[14px] text-on-surface truncate">Top Cropped Neon Vibes</p>
+<p class="font-body-sm text-[12px] text-on-surface-variant">Tamanho: M | Rosa</p>
+<p class="font-price-tag text-[14px] text-primary mt-1">R$ 89,90</p>
+</div>
+<div class="text-on-surface-variant font-label-bold text-label-bold px-2 py-1 bg-surface-container-highest rounded">
+                            x1
+                        </div>
+</div>
+<!-- Item 2 -->
+<div class="flex gap-3 items-center bg-surface p-2 rounded-lg">
+<div class="w-16 h-16 rounded-md overflow-hidden bg-surface-container flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A stylish flat lay of high-waisted distressed denim jeans on a clean, off-white surface. The lighting is soft and diffused, creating a premium glassmorphic vibe with subtle drop shadows. The image feels modern, clean, and optimized for a high-end social shopping feed." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB12yjwczlDjL8U9yqSyARvpi9EazZ5SLW-lxvsC5aQtDBV2V-1FfHWPwTehzvGANNQuCYrCqarePdicDhoEOaZnDb2WE2whV4dVqjqe-rXur3usDkAkebXiUIeJ3sCYULCz8aNrUPg_BjzymY5phhcAShbIEqT0oOHTQ9RCRICOP_CtbItTcyNJUMk6_Vmun_ag18kMbuuiiEWT2Ws_3hl8gsbesXrRp3m-PTEqgG1oCi2VciazOJU"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-title-md text-[14px] text-on-surface truncate">Calça Jeans High Waist</p>
+<p class="font-body-sm text-[12px] text-on-surface-variant">Tamanho: 38 | Azul Claro</p>
+<p class="font-price-tag text-[14px] text-primary mt-1">R$ 159,90</p>
+</div>
+<div class="text-on-surface-variant font-label-bold text-label-bold px-2 py-1 bg-surface-container-highest rounded">
+                            x1
+                        </div>
+</div>
+</div>
+</section>
+<!-- Order Summary & Sticky CTA -->
+<section class="bg-surface-container-lowest rounded-xl p-sm md:p-md shadow-[0px_10px_30px_rgba(216,27,96,0.05)] border border-primary/10 sticky top-20 flex flex-col gap-4">
+<h2 class="font-title-md text-title-md text-on-surface border-b border-surface-variant pb-2">Resumo do Pedido</h2>
+<div class="flex flex-col gap-2 font-body-sm text-body-sm">
+<div class="flex justify-between text-on-surface">
+<span>Subtotal de Produtos</span>
+<span>R$ 249,80</span>
+</div>
+<div class="flex justify-between text-on-surface">
+<span>Frete (Expresso)</span>
+<span>R$ 15,00</span>
+</div>
+<div class="flex justify-between text-tertiary">
+<span>Desconto (Cupom BIANA10)</span>
+<span>- R$ 24,98</span>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-3 flex justify-between items-baseline">
+<span class="font-title-md text-title-md text-on-surface">Total</span>
+<span class="font-price-tag text-[24px] text-primary">R$ 239,82</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant text-center">Em até 3x de R$ 79,94 sem juros</p>
+<button class="w-full py-3 rounded-lg bg-gradient-to-b from-[#d81b60] to-[#b0004a] text-white font-label-bold text-[16px] uppercase tracking-wide shadow-[0_4px_14px_0_rgba(216,27,96,0.39)] hover:shadow-[0_6px_20px_rgba(216,27,96,0.23)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex justify-center items-center gap-2 mt-2">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+                    Pagar Agora
+                </button>
+</section>
+</div>
+</main>
+<style>
+        /* Custom scrollbar for items list to match aesthetic */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--tw-colors-surface-variant);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--tw-colors-outline);
+        }
+    </style>
+</body></html>

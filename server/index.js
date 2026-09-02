@@ -13,8 +13,11 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 app.set('trust proxy', 1); // behind Coolify/Traefik
 
+// CORS_ORIGIN accepts a comma-separated list (e.g. production domain + a local
+// dev server) so the same deployed API can be pointed at from local testing.
+const allowedOrigins = (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: allowedOrigins.includes('*') ? '*' : allowedOrigins,
   credentials: true,
 }));
 app.use(express.json());

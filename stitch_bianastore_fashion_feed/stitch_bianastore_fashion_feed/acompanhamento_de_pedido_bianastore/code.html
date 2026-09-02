@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Acompanhar Pedido</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#d81b60",
+                        "tertiary-container": "#d12672",
+                        "primary-fixed": "#ffd9de",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "surface-dim": "#d9dadb",
+                        "surface-container-high": "#e7e8e9",
+                        "surface-tint": "#bc004f",
+                        "inverse-primary": "#ffb2bf",
+                        "error": "#ba1a1a",
+                        "secondary": "#5f5e5e",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "outline": "#8e6f74",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-fixed": "#3f0016",
+                        "on-primary-container": "#fff2f3",
+                        "inverse-surface": "#2e3132",
+                        "surface": "#f8f9fa",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "background": "#f8f9fa",
+                        "on-tertiary-fixed": "#3f001c",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffd9e2",
+                        "outline-variant": "#e3bdc3",
+                        "on-surface": "#191c1d",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "tertiary": "#ad0059",
+                        "secondary-container": "#e2dfde",
+                        "on-tertiary-container": "#fff2f3",
+                        "on-primary-fixed-variant": "#90003b",
+                        "primary": "#b0004a",
+                        "on-secondary-container": "#636262",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "surface-container": "#edeeef",
+                        "surface-variant": "#e1e3e4",
+                        "on-surface-variant": "#5a4044",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "on-background": "#191c1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "margin-mobile": "16px",
+                        "md": "24px",
+                        "lg": "40px",
+                        "margin-desktop": "32px",
+                        "sm": "16px",
+                        "gutter": "16px",
+                        "xs": "8px",
+                        "xl": "64px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "body-sm": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #f8f9fa; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .timeline-line {
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: -24px;
+            width: 2px;
+            background-color: #e1e3e4; /* surface-variant */
+            z-index: 0;
+        }
+        .timeline-line.active { background-color: #b0004a; /* primary */ }
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="text-on-background font-body-sm pt-20 pb-32 flex flex-col md:items-center">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-xl bg-surface/70 shadow-[0px_2px_10px_rgba(216,27,96,0.05)] flex justify-between items-center px-margin-mobile h-16 transition-transform">
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 flex items-center justify-center p-2 -ml-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary flex-1 text-center truncate px-4">Notificações</h1>
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 flex items-center justify-center p-2 -mr-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full px-margin-mobile md:w-[600px] md:px-0 flex flex-col gap-md">
+<!-- Page Title Context (Since TopAppBar is 'Notificações' per JSON, we add specific screen context here) -->
+<div class="py-2">
+<h2 class="font-title-md text-title-md text-on-surface">Acompanhar Pedido</h2>
+<p class="text-secondary font-body-sm">ID #12345</p>
+</div>
+<!-- Order Summary Card -->
+<div class="glass-panel rounded-xl p-sm flex gap-sm items-center shadow-[0px_10px_30px_rgba(216,27,96,0.04)]">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container-low">
+<img class="w-full h-full object-cover" data-alt="A brightly lit flat lay photograph of a vibrant floral summer dress folded neatly. The dress features deep pink and soft pastel flower patterns on a white background. The lighting is bright and even, casting soft shadows, conveying a fresh, modern fashion e-commerce aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGu3_u0esW7vyD7vLxvrunEC8oIvVLqMfEGdd6VXOrdTYceR1J9r5pLOqxuQAwuwtIT_Ahj-TfzgjL-3shhra1mBdPvdpTMx1cYAXlfnwcobsKixJ7Kdn3yJ3DmQPxbf2GU7wQ1Pj4Om2n52bsG4iOtCHYITM8LrvtKWbTM-BANmWcfBxjiGiJomIf0-lHlWgdwQMDPKu7AUOfzRbBisQ6xVxRHTInjjBKc5Jr7Mi5VfM99qMtUeKe"/>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<h3 class="font-title-md text-title-md text-on-surface line-clamp-1">Vestido Floral Verão</h3>
+<p class="font-body-sm text-secondary">Qtd: 1 • Tamanho: M</p>
+<p class="font-price-tag text-price-tag text-primary mt-1">R$ 149,90</p>
+</div>
+</div>
+<!-- Timeline Section -->
+<div class="glass-panel rounded-xl p-sm pt-md shadow-[0px_10px_30px_rgba(216,27,96,0.04)] relative">
+<h3 class="font-title-md text-title-md text-on-surface mb-md px-2">Status do Envio</h3>
+<div class="flex flex-col gap-lg relative px-2 pb-sm">
+<!-- Stage 1: Pedido Recebido -->
+<div class="flex gap-sm relative z-10">
+<div class="timeline-line active"></div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0 z-10 shadow-[0_0_10px_rgba(216,27,96,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-white" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="flex flex-col -mt-1">
+<span class="font-title-md text-title-md text-on-surface">Pedido Recebido</span>
+<span class="font-body-sm text-secondary">12 de Out, 09:41</span>
+</div>
+</div>
+<!-- Stage 2: Em Preparação (Active) -->
+<div class="flex gap-sm relative z-10">
+<div class="timeline-line"></div>
+<div class="relative w-6 h-6 shrink-0 z-10 flex items-center justify-center">
+<div class="absolute inset-0 bg-primary rounded-full pulse-ring"></div>
+<div class="w-4 h-4 rounded-full bg-primary border-2 border-white relative z-10"></div>
+</div>
+<div class="flex flex-col -mt-1">
+<span class="font-title-md text-title-md text-on-surface text-primary">Em Preparação</span>
+<span class="font-body-sm text-secondary">Seu pedido está sendo embalado.</span>
+</div>
+</div>
+<!-- Stage 3: Pedido Enviado -->
+<div class="flex gap-sm relative z-10">
+<div class="timeline-line"></div>
+<div class="w-6 h-6 rounded-full bg-surface-container-highest border-2 border-outline-variant flex items-center justify-center shrink-0 z-10">
+</div>
+<div class="flex flex-col -mt-1">
+<span class="font-title-md text-title-md text-secondary">Pedido Enviado</span>
+<span class="font-body-sm text-secondary opacity-60">Pendente</span>
+</div>
+</div>
+<!-- Stage 4: Pedido Entregue -->
+<div class="flex gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest border-2 border-outline-variant flex items-center justify-center shrink-0 z-10">
+</div>
+<div class="flex flex-col -mt-1">
+<span class="font-title-md text-title-md text-secondary">Pedido Entregue</span>
+<span class="font-body-sm text-secondary opacity-60">Pendente</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Details Section -->
+<div class="flex flex-col gap-md">
+<!-- Endereço -->
+<div class="glass-panel rounded-xl p-sm shadow-[0px_10px_30px_rgba(216,27,96,0.04)] flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary mb-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">location_on</span>
+<h3 class="font-title-md text-title-md text-on-surface">Endereço de Entrega</h3>
+</div>
+<p class="font-body-sm text-on-surface-variant pl-8">
+                    Rua das Flores, 123 - Apto 45<br/>
+                    Jardim Primavera<br/>
+                    São Paulo, SP - 01234-567
+                </p>
+</div>
+<!-- Resumo Financeiro -->
+<div class="glass-panel rounded-xl p-sm shadow-[0px_10px_30px_rgba(216,27,96,0.04)] flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary mb-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+<h3 class="font-title-md text-title-md text-on-surface">Resumo de Pagamento</h3>
+</div>
+<div class="flex flex-col gap-1 pl-8">
+<div class="flex justify-between font-body-sm text-on-surface-variant">
+<span>Subtotal</span>
+<span>R$ 149,90</span>
+</div>
+<div class="flex justify-between font-body-sm text-on-surface-variant">
+<span>Frete</span>
+<span class="text-primary font-bold">Grátis</span>
+</div>
+<div class="flex justify-between font-title-md text-title-md text-on-surface mt-2 pt-2 border-t border-outline-variant/30">
+<span>Total</span>
+<span>R$ 149,90</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full py-4 mt-sm rounded-xl font-title-md text-title-md text-primary bg-primary-fixed hover:bg-primary-fixed-dim transition-colors flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help</span>
+            Preciso de ajuda
+        </button>
+</main>
+<!-- BottomNavBar (Hidden on Desktop) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl backdrop-blur-xl border-t border-outline-variant/30 bg-surface/70 shadow-[0px_-4px_20px_rgba(0,0,0,0.04)] flex justify-around items-center h-20 px-2 pb-safe md:hidden">
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200 w-16 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-bold text-label-bold">Início</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200 w-16 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+<span class="font-label-bold text-label-bold">Explorar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200 w-16 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_bag</span>
+<span class="font-label-bold text-label-bold">Sacola</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60 hover:text-primary transition-colors active:scale-90 duration-200 w-16 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-bold text-label-bold">Favoritos</span>
+</a>
+<!-- Profile is Active as Tracking is usually under Profile/Orders -->
+<a class="flex flex-col items-center justify-center text-primary relative after:content-[''] after:absolute after:-top-1 after:w-1 after:h-1 after:bg-primary after:rounded-full hover:text-primary transition-colors active:scale-90 duration-200 w-16 gap-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-bold text-label-bold">Perfil</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Pedido Confirmado</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#e3bdc3",
+                        "surface-dim": "#d9dadb",
+                        "secondary": "#5f5e5e",
+                        "on-surface-variant": "#5a4044",
+                        "inverse-surface": "#2e3132",
+                        "secondary-fixed": "#e5e2e1",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "surface-tint": "#bc004f",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#191c1d",
+                        "tertiary": "#ad0059",
+                        "on-tertiary-container": "#fff2f3",
+                        "on-primary-fixed": "#3f0016",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-primary-fixed-variant": "#90003b",
+                        "on-error-container": "#93000a",
+                        "outline": "#8e6f74",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#191c1d",
+                        "inverse-on-surface": "#f0f1f2",
+                        "background": "#f8f9fa",
+                        "primary-container": "#d81b60",
+                        "surface-variant": "#e1e3e4",
+                        "secondary-container": "#e2dfde",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#3f001c",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#ffb2bf",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "surface-container-high": "#e7e8e9",
+                        "tertiary-container": "#d12672",
+                        "on-secondary-container": "#636262",
+                        "surface": "#f8f9fa",
+                        "tertiary-fixed": "#ffd9e2",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#edeeef",
+                        "primary-fixed": "#ffd9de",
+                        "on-primary": "#ffffff",
+                        "primary": "#b0004a",
+                        "on-primary-container": "#fff2f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "sm": "16px",
+                        "md": "24px",
+                        "lg": "40px",
+                        "xl": "64px",
+                        "xs": "8px",
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Plus Jakarta Sans"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #d81b60;
+            opacity: 0;
+        }
+        @keyframes floatDown {
+            0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(150px) rotate(360deg); opacity: 0; }
+        }
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-in {
+            animation: scaleIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-lg antialiased">
+<!-- TopAppBar -->
+<header class="bg-white/70 backdrop-blur-md fixed top-0 w-full z-50 shadow-[0px_10px_30px_rgba(216,27,96,0.08)]">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full">
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-display-lg text-headline-lg-mobile font-extrabold text-primary tracking-tighter">BianaStore</h1>
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center pt-24 pb-32 px-margin-mobile md:px-margin-desktop relative overflow-hidden">
+<!-- Confetti Container -->
+<div class="absolute inset-0 pointer-events-none z-0" id="confetti-container"></div>
+<!-- Success Visual -->
+<div class="z-10 flex flex-col items-center text-center max-w-md w-full">
+<div class="w-24 h-24 rounded-full bg-primary-container/20 flex items-center justify-center mb-6 animate-scale-in">
+<span class="material-symbols-outlined text-[64px] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-primary mb-2">Pedido Realizado com Sucesso!</h2>
+<p class="font-body-lg text-secondary mb-8">Obrigada por comprar na BianaStore, Maria! Seu pedido <strong>#12345</strong> foi confirmado.</p>
+<!-- Order Details Card -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-sm shadow-[0px_10px_30px_rgba(216,27,96,0.08)] mb-xs text-left">
+<div class="flex items-start gap-xs mb-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+<div>
+<h3 class="font-title-md text-on-surface">Entrega prevista</h3>
+<p class="font-body-sm text-secondary">5 a 7 dias úteis</p>
+</div>
+</div>
+<hr class="border-surface-variant mb-sm"/>
+<div class="flex items-start gap-xs">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<div>
+<h3 class="font-title-md text-on-surface">Endereço de Entrega</h3>
+<p class="font-body-sm text-secondary">Rua das Flores, 123, Apto 45<br/>Jardim Botânico, São Paulo - SP<br/>01234-567</p>
+</div>
+</div>
+</div>
+<!-- Summary Card -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-sm shadow-[0px_10px_30px_rgba(216,27,96,0.08)] mb-lg text-left">
+<div class="flex justify-between items-center mb-2">
+<span class="font-body-lg text-secondary">Total do Pedido</span>
+<span class="font-price-tag text-primary">R$ 239,82</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-secondary">Forma de Pagamento</span>
+<span class="font-body-sm text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-[16px]">credit_card</span>
+                        Cartão de Crédito
+                    </span>
+</div>
+</div>
+<!-- Actions -->
+<div class="w-full flex flex-col gap-sm">
+<button class="w-full h-14 rounded-full border-2 border-primary text-primary font-title-md bg-transparent hover:bg-primary/5 active:scale-95 transition-all duration-200">
+                    Acompanhar Pedido
+                </button>
+<button class="w-full h-14 rounded-full bg-gradient-to-b from-primary to-primary/90 text-white font-title-md shadow-[0px_4px_14px_rgba(216,27,96,0.4)] hover:opacity-90 active:scale-95 transition-all duration-200">
+                    Continuar Comprando
+                </button>
+</div>
+</div>
+</main>
+<script>
+        // Simple confetti effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#d81b60', '#ffb2bf', '#bc004f', '#e3bdc3'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                
+                // Randomize properties
+                const left = Math.random() * 100;
+                const animDuration = Math.random() * 2 + 1;
+                const delay = Math.random() * 0.5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                confetti.style.left = `${left}%`;
+                confetti.style.backgroundColor = color;
+                confetti.style.animation = `floatDown ${animDuration}s ease-in-out ${delay}s forwards`;
+                
+                // Randomize shape (some squares, some circles)
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '50%';
+                }
+                
+                container.appendChild(confetti);
+            }
+        });
+    </script>
+</body></html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore Video Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e7e8e9",
+                        "outline-variant": "#e3bdc3",
+                        "primary": "#b0004a",
+                        "on-surface-variant": "#5a4044",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#3f001c",
+                        "background": "#f8f9fa",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#fff2f3",
+                        "on-secondary-fixed-variant": "#474746",
+                        "inverse-primary": "#ffb2bf",
+                        "inverse-on-surface": "#f0f1f2",
+                        "outline": "#8e6f74",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "surface": "#f8f9fa",
+                        "on-primary-fixed": "#3f0016",
+                        "surface-container": "#edeeef",
+                        "primary-container": "#d81b60",
+                        "on-surface": "#191c1d",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container-low": "#f3f4f5",
+                        "on-primary-fixed-variant": "#90003b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-tertiary-container": "#fff2f3",
+                        "tertiary": "#ad0059",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffd9e2",
+                        "tertiary-container": "#d12672",
+                        "surface-dim": "#d9dadb",
+                        "on-background": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#636262",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#bc004f",
+                        "surface-container-highest": "#e1e3e4",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#ffd9de",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-variant": "#e1e3e4",
+                        "secondary-container": "#e2dfde"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "40px",
+                        "xs": "8px",
+                        "margin-mobile": "16px",
+                        "sm": "16px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    },
+                    "animation": {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .text-shadow-video { text-shadow: 0px 2px 4px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body class="bg-background text-on-background h-screen overflow-hidden flex flex-col relative md:items-center">
+<!-- Video Background -->
+<div class="absolute inset-0 z-0 bg-surface-container-highest w-full h-full md:w-[480px] md:h-[854px] md:top-1/2 md:-translate-y-1/2 md:rounded-xl overflow-hidden shadow-2xl">
+<div class="w-full h-full bg-cover bg-center" data-alt="A stunning, full-screen vertical video of a model wearing a 'Vestido Midi Elegante' in a bright, modern studio. The lighting is high-key and flattering, emphasizing the elegant fabric and deep pink accents of the dress. The aesthetic is fast-paced, high-end fashion with a digitally native, social media feel." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAXl-TVpDCuG-l_UFcYdr2u6VuHDFuFvhJhCYjyHZhgHfvWA1LRh-rGzmms3cBusMYmVSNo3W3H0LAjqQ3ur8AlfhpePcXCuBk5CCrj_wwtheCGwzsU_bsSt5Fx3wicspXs1Bl8G8AeGPIgsP45zDfuGsJP6Hn3HHmXy06WJ7hXckDti1y1uZtx3Y2OibISZ2-u3-NrQVsxmpB2FeVo_J4DBtPL9Co4PmDQrazoXu4se2IjuWItw3fd')"></div>
+<!-- Gradient Overlay for better readability -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+</div>
+<!-- Main Content Container (Mobile: Full width, Desktop: Centered Column) -->
+<main class="relative z-10 flex-1 w-full md:w-[480px] h-full flex flex-col justify-between pointer-events-none md:h-[854px] md:my-auto md:shadow-[0_0_50px_rgba(176,0,74,0.1)]">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-margin-mobile h-16 w-full fixed top-0 md:absolute z-50 bg-white/70 backdrop-blur-md shadow-[0px_10px_30px_rgba(216,27,96,0.08)] bg-transparent pointer-events-auto rounded-t-xl">
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-headline-lg-mobile" data-icon="menu">menu</span>
+</button>
+<div class="flex items-center gap-xs">
+<img alt="BianaStore" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClne1-sX8eG9ztrVairGbbMVKpHEeP1rZ0Wy_8-mh6A_eocof20pd_dN3grvdNUEXBPUMPHEMRXTMJsAULf_md6fZE_HYrFK0rMjGT-HjAHCrtjhReHNeW_VuFuE6d2GeXAVJcIxlAYc7K6XwtLoy5fyf0fcnBy67yOD19Gng55lDo7h6wK0eQKhmOHx9afHZfog5VKe6-CK-VC7bNZQjFUEl7v6tKOb_aspxwfujv8nXVUts7uGQY"/>
+<h1 class="font-display-lg text-headline-lg-mobile font-extrabold text-primary tracking-tighter">BianaStore</h1>
+</div>
+<button class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-headline-lg-mobile" data-icon="shopping_cart">shopping_cart</span>
+</button>
+</header>
+<!-- Spacer for TopNav -->
+<div class="h-16 shrink-0"></div><div class="relative z-40 w-full px-margin-mobile py-xs flex items-center gap-sm overflow-hidden pointer-events-auto">
+<div class="flex-1 flex gap-xs overflow-x-auto no-scrollbar">
+<button class="shrink-0 px-sm py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-label-bold text-label-bold hover:bg-white/40 transition-colors active:scale-95">Vestidos</button>
+<button class="shrink-0 px-sm py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-label-bold text-label-bold hover:bg-white/40 transition-colors active:scale-95">Camisas</button>
+<button class="shrink-0 px-sm py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-label-bold text-label-bold hover:bg-white/40 transition-colors active:scale-95">Calças</button>
+<button class="shrink-0 px-sm py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-label-bold text-label-bold hover:bg-white/40 transition-colors active:scale-95">Acessórios</button>
+</div>
+<button class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 transition-colors active:scale-95 shadow-lg">
+<span class="material-symbols-outlined text-title-md">tune</span>
+</button>
+</div>
+<style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+<!-- Center Area (Empty for video) -->
+<div class="flex-1"></div>
+<!-- Bottom Overlay Controls -->
+<div class="px-margin-mobile pb-sm flex justify-between items-end gap-gutter pointer-events-none relative z-20 w-full">
+<!-- Product Card Overlay -->
+<div class="bg-white/80 backdrop-blur-xl rounded-xl p-sm shadow-[0px_10px_30px_rgba(216,27,96,0.1)] flex-1 max-w-[70%] pointer-events-auto border border-outline-variant/30 relative overflow-hidden group hover:-translate-y-1 transition-transform">
+<div class="absolute inset-0 bg-gradient-to-tr from-primary-fixed/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<h2 class="font-title-md text-title-md text-on-surface mb-base truncate">Vestido Midi Elegante</h2>
+<div class="flex items-end gap-xs mb-xs">
+<span class="font-price-tag text-price-tag text-primary animate-pulse-fast">R$ 199,00</span>
+<span class="font-body-sm text-body-sm text-secondary line-through">R$ 299,00</span>
+</div>
+<button class="w-full bg-primary text-on-primary font-label-bold text-label-bold py-xs rounded-lg shadow-sm active:scale-95 transition-all bg-gradient-to-b from-primary to-primary-container">
+                    BUY NOW
+                </button>
+</div>
+<!-- Floating Sidebar (Social Controls) -->
+<div class="flex flex-col gap-md items-center pointer-events-auto pb-lg">
+<button class="flex flex-col items-center gap-base group active:scale-90 transition-transform">
+<div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 group-hover:bg-primary-container/90 transition-colors">
+<span class="material-symbols-outlined text-white text-shadow-video group-hover:text-on-primary" data-icon="favorite" data-weight="fill" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<span class="text-white font-label-bold text-label-bold text-shadow-video">12.4K</span>
+</button>
+<button class="flex flex-col items-center gap-base group active:scale-90 transition-transform">
+<div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 group-hover:bg-white/40 transition-colors">
+<span class="material-symbols-outlined text-white text-shadow-video" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<span class="text-white font-label-bold text-label-bold text-shadow-video">842</span>
+</button>
+<button class="flex flex-col items-center gap-base group active:scale-90 transition-transform">
+<div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/30 group-hover:bg-white/40 transition-colors">
+<span class="material-symbols-outlined text-white text-shadow-video" data-icon="share">share</span>
+</div>
+<span class="text-white font-label-bold text-label-bold text-shadow-video">Share</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="flex justify-around items-center h-20 px-sm pb-safe w-full fixed bottom-0 md:absolute z-50 rounded-t-xl bg-white/70 backdrop-blur-md shadow-[0px_-10px_30px_rgba(0,0,0,0.05)] bg-transparent pointer-events-auto">
+<button class="flex flex-col items-center justify-center text-primary scale-110 transition-all hover:text-primary active:scale-90 duration-150 group">
+<span class="material-symbols-outlined mb-base group-hover:-translate-y-1 transition-transform" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-bold text-label-bold">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary opacity-70 hover:text-primary active:scale-90 transition-transform duration-150 group">
+<span class="material-symbols-outlined mb-base group-hover:-translate-y-1 transition-transform" data-icon="storefront">storefront</span>
+<span class="font-label-bold text-label-bold">Shop</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary opacity-70 hover:text-primary active:scale-90 transition-transform duration-150 group">
+<span class="material-symbols-outlined mb-base group-hover:-translate-y-1 transition-transform" data-icon="person">person</span>
+<span class="font-label-bold text-label-bold">Profile</span>
+</button>
+</nav>
+<!-- Spacer for Bottom Nav -->
+<div class="h-20 shrink-0 md:hidden"></div>
+</main>
+<div class="fixed inset-0 z-[100] pointer-events-none transition-opacity duration-300 opacity-0" id="filter-sidebar">
+<div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+<div class="absolute right-0 top-0 h-full w-72 bg-surface shadow-2xl flex flex-col translate-x-full transition-transform duration-300">
+<div class="p-sm border-b border-outline-variant/30 flex justify-between items-center">
+<h3 class="font-title-md text-on-surface">Filtros</h3>
+<button class="text-secondary hover:text-primary">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-sm flex flex-col gap-md">
+<div>
+<p class="font-label-bold text-label-bold text-secondary mb-xs uppercase tracking-wider">Tecido</p>
+<div class="flex flex-wrap gap-xs">
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Seda</button>
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Algodão</button>
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Linho</button>
+</div>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-secondary mb-xs uppercase tracking-wider">Estilo</p>
+<div class="flex flex-wrap gap-xs">
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Casual</button>
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Festa</button>
+<button class="px-sm py-1 rounded-lg border border-outline-variant text-body-sm hover:bg-primary-fixed/20">Trabalho</button>
+</div>
+</div>
+</div>
+<div class="p-sm border-t border-outline-variant/30">
+<button class="w-full bg-primary text-on-primary font-label-bold py-sm rounded-xl shadow-lg active:scale-95 transition-transform">APLICAR</button>
+</div>
+</div>
+</div></body></html>

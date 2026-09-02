@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BianaStore - Produtos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Hanken+Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f8f9fa",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-fixed-variant": "#90003b",
+                        "surface-dim": "#d9dadb",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "primary-container": "#d81b60",
+                        "surface-container-highest": "#e1e3e4",
+                        "surface-tint": "#bc004f",
+                        "surface-container-high": "#e7e8e9",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#5a4044",
+                        "background": "#f8f9fa",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "tertiary-fixed": "#ffd9e2",
+                        "primary-fixed-dim": "#ffb2bf",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#8e0048",
+                        "on-secondary-container": "#636262",
+                        "primary-fixed": "#ffd9de",
+                        "on-tertiary-fixed": "#3f001c",
+                        "outline": "#8e6f74",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-container": "#e2dfde",
+                        "secondary": "#5f5e5e",
+                        "surface-variant": "#e1e3e4",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#2e3132",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e3bdc3",
+                        "surface-container-low": "#f3f4f5",
+                        "on-primary-fixed": "#3f0016",
+                        "on-background": "#191c1d",
+                        "on-surface": "#191c1d",
+                        "inverse-primary": "#ffb2bf",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#ad0059",
+                        "on-tertiary-container": "#fff2f3",
+                        "on-primary-container": "#fff2f3",
+                        "primary": "#b0004a",
+                        "surface-container": "#edeeef",
+                        "tertiary-container": "#d12672",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "sm": "16px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "margin-desktop": "32px",
+                        "base": "4px",
+                        "margin-mobile": "16px",
+                        "xs": "8px",
+                        "lg": "40px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "price-tag": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "price-tag": ["20px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "title-md": ["18px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "label-bold": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8f9fa; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d9dadb; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c8c6c5; 
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .shadow-ambient {
+            box-shadow: 0px 10px 30px rgba(216, 27, 96, 0.08);
+        }
+        
+        .row-hover:hover {
+            background-color: #f3f4f5;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg min-h-screen overflow-x-hidden flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface text-primary font-body-lg text-body-lg fixed left-0 top-0 h-screen flex flex-col py-md bg-surface-container-low shadow-md w-64 z-50">
+<div class="px-md pb-lg">
+<h1 class="font-display-lg text-headline-lg text-primary">BianaStore</h1>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Admin Panel</p>
+</div>
+<div class="flex-1 flex flex-col gap-2 px-sm">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-primary-fixed-dim/20 hover:bg-surface-container-high transition-colors transform scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-weight="fill">inventory_2</span>
+<span>Produtos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span>Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Clientes</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Configurações</span>
+</a>
+</div>
+<div class="px-sm mt-auto">
+<button class="w-full bg-primary-container text-on-primary-container font-title-md text-title-md py-3 rounded-lg shadow-ambient hover:opacity-90 transition-opacity flex items-center justify-center gap-2" onclick="toggleSidebarForm()">
+<span class="material-symbols-outlined">add</span>
+                Novo Produto
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-h-screen w-full md:ml-64">
+<!-- TopNavBar -->
+<header class="bg-surface/70 backdrop-blur-xl text-primary font-title-md text-title-md flex justify-between items-center w-full px-margin-desktop h-16 sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<!-- Mobile Menu Toggle -->
+<button class="md:hidden text-secondary p-2 -ml-2 rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-headline-lg text-headline-lg font-extrabold text-primary md:hidden">BianaStore Admin</h2>
+<h2 class="font-headline-lg text-headline-lg font-extrabold text-primary hidden md:block">Produtos</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-primary-container text-body-sm text-on-surface w-64 outline-none" placeholder="Buscar..." type="text"/>
+</div>
+<button class="text-secondary-fixed-dim hover:text-primary transition-all p-2 rounded-full hover:bg-surface-container relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<button class="text-secondary-fixed-dim hover:text-primary transition-all p-2 rounded-full hover:bg-surface-container hidden sm:block">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2 cursor-pointer">
+<img alt="Avatar da Proprietária" class="w-full h-full object-cover" data-alt="A close up portrait of a confident female store owner with a warm smile, wearing a modern pink blazer in a well-lit, contemporary studio setting. Light mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHAsK6Kp6YMzgYRj6RqsAHV_TdxHfHfdG23u7Qj337N0ufe6u1el1NNCDTAAOi7ddfeYxx34IjssYHmY_eo0g5OKk79InUapoO1N7BvXWtFSmfFnXg81wYqjzyab1QPZC5DhiKlhFxGXB8YpFNRWZV8bLXpt5rFNNhVlt0oyUzBS_KxVVEn2yhJg1Nnw2mOn-GfgMgn1CGJYzz4emzM_1brySfxawrLYWaXYvCrjaOJoxd6NBJ4AYi"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 p-margin-mobile md:p-margin-desktop">
+<!-- Page Header & Actions -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-lg">
+<div>
+<p class="font-body-sm text-body-sm text-secondary mb-1">Gerencie seu inventário</p>
+<h3 class="font-title-md text-title-md text-on-surface">Listagem de Produtos</h3>
+</div>
+<button class="bg-primary-container text-on-primary-container font-title-md text-title-md px-6 py-3 rounded-full shadow-ambient hover:opacity-90 transition-opacity flex items-center gap-2 transform active:scale-95 duration-150" onclick="toggleSidebarForm()">
+<span class="material-symbols-outlined">add</span>
+                    Adicionar Novo Produto
+                </button>
+</div>
+<!-- Bento Grid Stats (Optional but adds flair) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-lg">
+<div class="glass-panel p-md rounded-xl shadow-ambient">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body-sm text-body-sm text-secondary">Total Produtos</span>
+<span class="material-symbols-outlined text-primary-container bg-primary-fixed rounded-lg p-1">inventory_2</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-on-surface">1,248</span>
+</div>
+<div class="glass-panel p-md rounded-xl shadow-ambient">
+<div class="flex justify-between items-start mb-2">
+<span class="font-body-sm text-body-sm text-secondary">Sem Estoque</span>
+<span class="material-symbols-outlined text-error bg-error-container rounded-lg p-1">warning</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-on-surface">12</span>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient overflow-hidden border border-surface-variant">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-surface-variant">
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider">Produto</th>
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider">Código</th>
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider">Categoria</th>
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider">Estoque</th>
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider">Preço</th>
+<th class="p-4 font-label-bold text-label-bold text-secondary uppercase tracking-wider text-right">Ações</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-surface-variant">
+<!-- Row 1 -->
+<tr class="row-hover transition-colors group">
+<td class="p-4 flex items-center gap-4">
+<div class="w-12 h-16 rounded-lg overflow-hidden bg-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A modern casual long pink dress on a white background, well lit, e-commerce style photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp9zwqEkD_P33jkPD0EvTTaOSpAWZ8vk6k-p1WgE6PfApTCG2zCWb3DyDaxoZqZm6uSHn_9k-6ruR9xP9aJbKWCf-FJPg6FscNfbuEYDZrP4DFPmnDq9cUQaqBtHKrqi_6SvDvpksKGCtke_JGxo9i-9gCSKNjn3_sVeIGgDoV-1MixDDAFiJzQt3Ef39BxOCgUJWSSZuN18TVVX8w7jAIVbCm1GBnQtp0i30sRLrIhobcirxIAjGA"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Vestido Longo Floral</p>
+<p class="text-secondary text-xs mt-1">Seda • Romântico</p>
+</div>
+</td>
+<td class="p-4 text-secondary">REF-2023-VL01</td>
+<td class="p-4"><span class="px-3 py-1 bg-surface-container text-on-surface rounded-full text-xs">Vestido</span></td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span>45 un</span>
+</div>
+</td>
+<td class="p-4 font-price-tag text-price-tag text-primary">R$ 289,90</td>
+<td class="p-4 text-right">
+<button class="text-secondary hover:text-primary-container p-2 rounded-full hover:bg-primary-fixed-dim/20 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="row-hover transition-colors group">
+<td class="p-4 flex items-center gap-4">
+<div class="w-12 h-16 rounded-lg overflow-hidden bg-surface-variant flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A crisp white modern blouse for women on a light background, e-commerce style photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa_dLmRGmqm8Hl2PxZpjx0Sn1l3CgBYVj0nMPSrj1l48gXALezw9i3qDVHUSbs-6XToHYpjibPNwi0yTdDB3_U6wZY3x8nup5M-tzDH3BCE78_QbVjWI8CVFaeyAJbK83uD381wJnYzgCXkDP4zM1GFkonefnwtqlszR8_1G5I-xdfojfLuGSba_4DSTrbkQHZQNFuDE4r4Dswk43ejqTrOWscf4ZEGtuZfJdX6cnrocIRuDvDQ8Oz"/>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Blusa Manga Bufante</p>
+<p class="text-secondary text-xs mt-1">Algodão • Casual</p>
+</div>
+</td>
+<td class="p-4 text-secondary">REF-2023-BB02</td>
+<td class="p-4"><span class="px-3 py-1 bg-surface-container text-on-surface rounded-full text-xs">Blusa</span></td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+<span>8 un</span>
+</div>
+</td>
+<td class="p-4 font-price-tag text-price-tag text-primary">R$ 149,90</td>
+<td class="p-4 text-right">
+<button class="text-secondary hover:text-primary-container p-2 rounded-full hover:bg-primary-fixed-dim/20 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-4 border-t border-surface-variant flex items-center justify-between text-body-sm text-secondary">
+<span>Mostrando 1 a 10 de 1,248 produtos</span>
+<div class="flex gap-2">
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-50"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-1 rounded hover:bg-surface-container"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Side Drawer Form (Hidden by default) -->
+<div class="fixed inset-0 z-[100] flex justify-end invisible opacity-0 transition-all duration-300 ease-in-out" id="sidebarForm">
+<!-- Overlay -->
+<div class="absolute inset-0 bg-on-background/40 backdrop-blur-sm" onclick="toggleSidebarForm()"></div>
+<!-- Drawer Panel -->
+<div class="relative w-full max-w-md bg-surface-container-lowest h-full shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out" id="drawerPanel">
+<!-- Drawer Header -->
+<div class="flex justify-between items-center p-md border-b border-surface-variant">
+<h2 class="font-title-md text-title-md text-on-surface">Adicionar Novo Produto</h2>
+<button class="text-secondary hover:bg-surface-container p-2 rounded-full transition-colors" onclick="toggleSidebarForm()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-md">
+<form class="space-y-6">
+<!-- Basic Info -->
+<div class="space-y-4">
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Código de Referência</label>
+<input class="w-full bg-surface-container-low border border-transparent focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg p-3 text-body-sm text-on-surface outline-none transition-colors" placeholder="Ex: REF-2024-001" type="text"/>
+</div>
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Nome do Produto</label>
+<input class="w-full bg-surface-container-low border border-transparent focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg p-3 text-body-sm text-on-surface outline-none transition-colors" placeholder="Ex: Vestido Midi Estampado" type="text"/>
+</div>
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Preço (R$)</label>
+<input class="w-full bg-surface-container-low border border-transparent focus:border-primary-container focus:ring-1 focus:ring-primary-container rounded-lg p-3 text-body-sm text-on-surface outline-none transition-colors" placeholder="0,00" type="text"/>
+</div>
+</div>
+<hr class="border-surface-variant"/>
+<!-- Categorization -->
+<div class="space-y-4">
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Categoria</label>
+<div class="grid grid-cols-2 gap-2">
+<label class="flex items-center p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-fixed-dim/20 has-[:checked]:border-primary">
+<input class="text-primary focus:ring-primary border-outline-variant" name="categoria" type="radio" value="vestido"/>
+<span class="ml-2 font-body-sm text-body-sm">Vestido</span>
+</label>
+<label class="flex items-center p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-fixed-dim/20 has-[:checked]:border-primary">
+<input class="text-primary focus:ring-primary border-outline-variant" name="categoria" type="radio" value="camisa"/>
+<span class="ml-2 font-body-sm text-body-sm">Camisa</span>
+</label>
+<label class="flex items-center p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-fixed-dim/20 has-[:checked]:border-primary">
+<input class="text-primary focus:ring-primary border-outline-variant" name="categoria" type="radio" value="blusa"/>
+<span class="ml-2 font-body-sm text-body-sm">Blusa</span>
+</label>
+<label class="flex items-center p-3 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary-fixed-dim/20 has-[:checked]:border-primary">
+<input class="text-primary focus:ring-primary border-outline-variant" name="categoria" type="radio" value="calca"/>
+<span class="ml-2 font-body-sm text-body-sm">Calça</span>
+</label>
+</div>
+</div>
+</div>
+<hr class="border-surface-variant"/>
+<!-- Attributes -->
+<div class="space-y-4">
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Cores (Múltipla Seleção)</label>
+<div class="flex flex-wrap gap-2">
+<!-- Fake multiselect chips -->
+<button class="px-4 py-2 rounded-full border border-outline-variant text-body-sm hover:bg-surface-container transition-colors" type="button">Rosa</button>
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary text-body-sm shadow-sm flex items-center gap-1" type="button">Preto <span class="material-symbols-outlined text-sm">close</span></button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-body-sm hover:bg-surface-container transition-colors" type="button">Branco</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-body-sm text-secondary border-dashed flex items-center gap-1" type="button"><span class="material-symbols-outlined text-sm">add</span> Adicionar</button>
+</div>
+</div>
+<div>
+<label class="block font-label-bold text-label-bold text-secondary uppercase mb-2">Tamanhos</label>
+<div class="flex gap-2">
+<label class="flex-1 text-center py-2 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary has-[:checked]:border-primary">
+<input class="sr-only" type="checkbox"/>
+<span class="font-body-sm text-body-sm">P</span>
+</label>
+<label class="flex-1 text-center py-2 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary has-[:checked]:border-primary">
+<input class="sr-only" type="checkbox"/>
+<span class="font-body-sm text-body-sm">M</span>
+</label>
+<label class="flex-1 text-center py-2 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary has-[:checked]:border-primary">
+<input class="sr-only" type="checkbox"/>
+<span class="font-body-sm text-body-sm">G</span>
+</label>
+<label class="flex-1 text-center py-2 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary has-[:checked]:border-primary">
+<input class="sr-only" type="checkbox"/>
+<span class="font-body-sm text-body-sm">GG</span>
+</label>
+</div>
+</div>
+</div>
+</form>
+</div>
+<!-- Drawer Footer -->
+<div class="p-md border-t border-surface-variant bg-surface-bright flex gap-4">
+<button class="flex-1 py-3 px-4 rounded-lg font-title-md text-title-md text-secondary border border-outline-variant hover:bg-surface-container transition-colors" onclick="toggleSidebarForm()">
+                    Cancelar
+                </button>
+<button class="flex-1 py-3 px-4 rounded-lg font-title-md text-title-md bg-primary-container text-on-primary-container shadow-ambient hover:opacity-90 transition-opacity">
+                    Salvar Produto
+                </button>
+</div>
+</div>
+</div>
+<script>
+        function toggleSidebarForm() {
+            const sidebar = document.getElementById('sidebarForm');
+            const panel = document.getElementById('drawerPanel');
+            
+            if (sidebar.classList.contains('invisible')) {
+                // Open
+                sidebar.classList.remove('invisible');
+                // Small delay to allow display block to apply before transition
+                setTimeout(() => {
+                    sidebar.classList.remove('opacity-0');
+                    sidebar.classList.add('opacity-100');
+                    panel.classList.remove('translate-x-full');
+                    panel.classList.add('translate-x-0');
+                }, 10);
+            } else {
+                // Close
+                sidebar.classList.remove('opacity-100');
+                sidebar.classList.add('opacity-0');
+                panel.classList.remove('translate-x-0');
+                panel.classList.add('translate-x-full');
+                
+                // Wait for transition to finish before hiding completely
+                setTimeout(() => {
+                    sidebar.classList.add('invisible');
+                }, 300);
+            }
+        }
+    </script>
+</body></html>
