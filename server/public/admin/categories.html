@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Categorias</title>
+<link rel="stylesheet" href="admin.css"/>
+<style>
+  .cat-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px; }
+  .cat-form input[type=text] { flex:1; min-width:160px; }
+  .cat-form input[type=number] { width:90px; }
+  .inline-edit { display:flex; gap:6px; align-items:center; }
+  .inline-edit input { padding:4px 8px; border:1px solid #ddd; border-radius:6px; font-size:14px; }
+  .inline-edit input[type=text] { width:160px; }
+  .inline-edit input[type=number] { width:70px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <h2>Categorias</h2>
+
+  <div class="card">
+    <h3 style="margin:0 0 16px">Nova categoria</h3>
+    <div class="cat-form">
+      <div>
+        <label>Nome</label>
+        <input type="text" id="new-name" placeholder="Ex: Vestidos"/>
+      </div>
+      <div>
+        <label>Ordem</label>
+        <input type="number" id="new-order" value="0" min="0"/>
+      </div>
+      <button class="btn primary" onclick="createCategory()">Adicionar</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0; margin-top:16px">
+    <table>
+      <thead>
+        <tr><th>Nome</th><th>Ordem</th><th>Produtos</th><th></th></tr>
+      </thead>
+      <tbody id="rows"><tr><td colspan="4">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('categories');
+
+let categories = [];
+let productCounts = {};
+
+async function load() {
+  await requireAuth();
+  const [cats, prods] = await Promise.all([
+    api('/categories'),
+    api('/products'),
+  ]);
+  categories = cats;
+  productCounts = {};
+  prods.forEach((p) => {
+    if (p.category_id) productCounts[p.category_id] = (productCounts[p.category_id] || 0) + 1;
+  });
+  render();
+}
+
+function render() {
+  const rows = document.getElementById('rows');
+  if (!categories.length) {
+    rows.innerHTML = '<tr><td colspan="4">Nenhuma categoria cadastrada.</td></tr>';
+    return;
+  }
+  rows.innerHTML = categories.map((c) => `
+    <tr id="row-${c.id}">
+      <td>
+        <div class="inline-edit">
+          <input type="text" id="name-${c.id}" value="${escapeHtml(c.name)}"/>
+        </div>
+      </td>
+      <td>
+        <div class="inline-edit">
+          <input type="number" id="order-${c.id}" value="${c.sort_order}" min="0"/>
+        </div>
+      </td>
+      <td>${productCounts[c.id] || 0}</td>
+      <td>
+        <button class="btn secondary" onclick="saveCategory(${c.id})">Salvar</button>
+        <button class="btn danger" onclick="deleteCategory(${c.id}, '${escapeHtml(c.name)}')" ${(productCounts[c.id] || 0) > 0 ? 'title="Categoria com produtos — mova-os antes de excluir"' : ''}>Excluir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function createCategory() {
+  const name = document.getElementById('new-name').value.trim();
+  const sortOrder = parseInt(document.getElementById('new-order').value) || 0;
+  if (!name) { alert('Informe o nome da categoria.'); return; }
+  await api('/categories', {
+    method: 'POST',
+    body: JSON.stringify({ name, sortOrder }),
+  });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-order').value = '0';
+  load();
+}
+
+async function saveCategory(id) {
+  const name = document.getElementById(`name-${id}`).value.trim();
+  const sortOrder = parseInt(document.getElementById(`order-${id}`).value) || 0;
+  if (!name) { alert('O nome não pode ficar em branco.'); return; }
+  await api(`/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name, sortOrder }),
+  });
+  load();
+}
+
+async function deleteCategory(id, name) {
+  const count = productCounts[id] || 0;
+  const msg = count > 0
+    ? `A categoria "${name}" tem ${count} produto(s). Excluí-la vai deixar esses produtos sem categoria. Deseja mesmo excluir?`
+    : `Excluir a categoria "${name}"?`;
+  if (!confirm(msg)) return;
+  await api(`/categories/${id}`, { method: 'DELETE' });
+  load();
+}
+
+load();
+</script>
+</body>
+</html>
