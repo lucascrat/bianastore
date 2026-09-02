@@ -13,10 +13,13 @@ function getUserId() {
 }
 
 async function api(path, opts = {}) {
+  // FormData bodies (file uploads) must NOT get a manual Content-Type — the
+  // browser needs to set its own multipart boundary.
+  const isFormData = opts.body instanceof FormData;
   const res = await fetch(API_BASE + path, {
     ...opts,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       'X-User-Id': getUserId(),
       ...(opts.headers || {}),
     },
@@ -40,11 +43,14 @@ let NOTIFICATIONS = [];
 let currentScreen = 'feed';
 let cart = []; // mirror of the server cart, loaded from /api/cart (see loadInitialData/refreshCart)
 let favorites = new Set(); // product ids, loaded from /api/favorites
-let likedFeed = new Set();
 let activeCategory = 'Todos';
 let selectedProduct = null;
 let selectedSize = null;
 let selectedColor = 0;
+let currentCustomer = null; // {userId,name,email,photoUrl} once logged in, else null — see /api/auth/me
+let authMode = 'login'; // 'login' | 'register', toggled on screen-auth
+let authPhotoUrl = null; // photo uploaded during registration, before the account exists
+let activeCommentsFeedItem = null; // feed item currently open on screen-comments
 
 // ─────────────────────────────────────────────────────────
 // NAVIGATION
@@ -62,7 +68,7 @@ function navigateTo(screen, data) {
   currentScreen = screen;
   // Scroll top-bar actions
   const leftIcon = document.getElementById('topBarLeftIcon');
-  if (['product','cart','checkout','confirm','notifications'].includes(screen)) {
+  if (['product','cart','checkout','confirm','notifications','auth','comments'].includes(screen)) {
     leftIcon.textContent = 'arrow_back';
   } else {
     leftIcon.textContent = 'menu';
@@ -77,10 +83,12 @@ function navigateTo(screen, data) {
   if (screen === 'product' && data) { selectedProduct = data; selectedSize = data.sizes[1] || data.sizes[0]; selectedColor = 0; renderProductDetail(); }
   if (screen === 'checkout') renderCheckout();
   if (screen === 'confirm') renderConfirmation();
+  if (screen === 'auth') renderAuth();
+  if (screen === 'comments' && data) { activeCommentsFeedItem = data; renderComments(); }
 }
 
 function handleTopLeft() {
-  const backs = ['product','cart','checkout','confirm','notifications'];
+  const backs = ['product','cart','checkout','confirm','notifications','auth','comments'];
   if (backs.includes(currentScreen)) {
     history.back();
     // Simple back logic
@@ -89,6 +97,8 @@ function handleTopLeft() {
     else if (currentScreen === 'checkout') navigateTo('cart');
     else if (currentScreen === 'confirm') navigateTo('shop');
     else if (currentScreen === 'notifications') navigateTo('profile');
+    else if (currentScreen === 'auth') navigateTo('profile');
+    else if (currentScreen === 'comments') navigateTo('feed');
   }
 }
 
@@ -110,15 +120,15 @@ function renderFeed() {
       <div class="feed-overlay"></div>
       ${item.sale ? `<div class="feed-sale-chip">${item.sale}</div>` : ''}
       <div class="feed-actions">
-        <button class="feed-action-btn" id="feedLike${i}" onclick="toggleFeedLike(${i})">
+        <button class="feed-action-btn ${item.likedByMe ? 'liked' : ''}" id="feedLike${i}" onclick="toggleFeedLike(${item.id}, ${i})">
           <div class="icon-circle">
-            <span class="material-symbols-outlined" id="feedLikeIcon${i}">favorite</span>
+            <span class="material-symbols-outlined" id="feedLikeIcon${i}" style="${item.likedByMe ? "font-variation-settings:'FILL' 1" : ''}">favorite</span>
           </div>
           <span id="feedLikeCount${i}">${item.likes}</span>
         </button>
-        <button class="feed-action-btn" onclick="showToast('Comentários em breve!')">
+        <button class="feed-action-btn" onclick="navigateTo('comments', FEED_ITEMS.find(f=>f.id==${item.id}))">
           <div class="icon-circle"><span class="material-symbols-outlined">chat_bubble</span></div>
-          <span>${item.comments}</span>
+          <span id="feedCommentCount${i}">${item.comments}</span>
         </button>
         <button class="feed-action-btn" onclick="handleShare(${item.product.id})">
           <div class="icon-circle"><span class="material-symbols-outlined">share</span></div>
@@ -139,17 +149,24 @@ function renderFeed() {
   `).join('');
 }
 
-function toggleFeedLike(i) {
-  const btn = document.getElementById('feedLike'+i);
-  const icon = document.getElementById('feedLikeIcon'+i);
-  if (likedFeed.has(i)) {
-    likedFeed.delete(i);
-    btn.classList.remove('liked');
-    icon.style.fontVariationSettings = '';
-  } else {
-    likedFeed.add(i);
-    btn.classList.add('liked');
-    icon.style.fontVariationSettings = "'FILL' 1";
+function formatCount(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+async function toggleFeedLike(feedItemId, i) {
+  const btn = document.getElementById('feedLike' + i);
+  const icon = document.getElementById('feedLikeIcon' + i);
+  const countEl = document.getElementById('feedLikeCount' + i);
+  try {
+    const { liked, likesCount } = await api(`/api/feed/${feedItemId}/like/toggle`, { method: 'POST' });
+    btn.classList.toggle('liked', liked);
+    icon.style.fontVariationSettings = liked ? "'FILL' 1" : '';
+    countEl.textContent = formatCount(likesCount);
+    const item = FEED_ITEMS.find(f => f.id === feedItemId);
+    if (item) { item.likedByMe = liked; item.likes = formatCount(likesCount); }
+  } catch (err) {
+    showToast('Erro ao curtir: ' + err.message);
   }
 }
 
@@ -717,11 +734,19 @@ async function renderProfile() {
   const content = document.getElementById('profileContent');
   let ordersCount = 0;
   try { ordersCount = (await api('/api/orders')).length; } catch { /* keep 0 on error */ }
+
+  const loggedIn = Boolean(currentCustomer);
+  const initial = loggedIn ? currentCustomer.name.trim().charAt(0).toUpperCase() : '?';
+  const avatarHtml = loggedIn && currentCustomer.photoUrl
+    ? `<img src="${currentCustomer.photoUrl}" style="width:100%;height:100%;object-fit:cover"/>`
+    : initial;
+
   content.innerHTML = `
     <div class="profile-hero">
-      <div class="profile-avatar">M</div>
-      <div class="profile-name">Maria Clara</div>
-      <div class="profile-email">mariaclara@email.com</div>
+      <div class="profile-avatar">${avatarHtml}</div>
+      <div class="profile-name">${loggedIn ? escapeHtml(currentCustomer.name) : 'Visitante'}</div>
+      <div class="profile-email">${loggedIn ? escapeHtml(currentCustomer.email) : 'Faça login para salvar seus dados'}</div>
+      ${!loggedIn ? `<button style="margin-top:8px;padding:10px 24px;border-radius:99px;background:#fff;color:var(--primary);font-weight:700;font-family:'Plus Jakarta Sans',sans-serif" onclick="navigateTo('auth')">Entrar / Criar conta</button>` : ''}
     </div>
     <div class="profile-stats">
       <div class="profile-stat">
@@ -752,7 +777,7 @@ async function renderProfile() {
       <div class="profile-menu-item" onclick="navigateTo('notifications')">
         <span class="material-symbols-outlined">notifications</span>
         <span class="profile-menu-item-label">Notificações</span>
-        <span style="background:var(--primary);color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:99px">3</span>
+        <span class="material-symbols-outlined arrow">chevron_right</span>
       </div>
       <div class="profile-section-title" style="margin-top:16px">Configurações</div>
       <div class="profile-menu-item" onclick="showToast('Endereços em breve!')">
@@ -770,12 +795,177 @@ async function renderProfile() {
         <span class="profile-menu-item-label">Ativar Notificações Push</span>
         <span class="material-symbols-outlined arrow">chevron_right</span>
       </div>
-      <div class="profile-menu-item" onclick="showToast('Saindo...')">
+      ${loggedIn ? `
+      <div class="profile-menu-item" onclick="logoutCustomer()">
         <span class="material-symbols-outlined" style="color:var(--error)">logout</span>
         <span class="profile-menu-item-label" style="color:var(--error)">Sair</span>
-      </div>
+      </div>` : `
+      <div class="profile-menu-item" onclick="navigateTo('auth')">
+        <span class="material-symbols-outlined" style="color:var(--primary)">login</span>
+        <span class="profile-menu-item-label" style="color:var(--primary)">Entrar / Criar conta</span>
+      </div>`}
     </div>
   `;
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ─────────────────────────────────────────────────────────
+// AUTH (login / cadastro)
+// ─────────────────────────────────────────────────────────
+function renderAuth() {
+  const content = document.getElementById('authContent');
+  content.innerHTML = `
+    <div class="auth-tabs">
+      <div class="auth-tab ${authMode === 'login' ? 'active' : ''}" onclick="switchAuthMode('login')">Entrar</div>
+      <div class="auth-tab ${authMode === 'register' ? 'active' : ''}" onclick="switchAuthMode('register')">Criar conta</div>
+    </div>
+    ${authMode === 'register' ? `
+      <div class="auth-avatar-upload" onclick="document.getElementById('authPhotoInput').click()">
+        ${authPhotoUrl ? `<img src="${authPhotoUrl}"/>` : `<span class="material-symbols-outlined">add_a_photo</span>`}
+      </div>
+      <div class="auth-avatar-hint">Foto de perfil (opcional)</div>
+      <input type="file" id="authPhotoInput" accept="image/*" style="display:none" onchange="handleAuthPhotoUpload(event)"/>
+      <div class="checkout-section">
+        <div class="checkout-field"><label>Nome</label><input type="text" id="auth-name" placeholder="Seu nome"/></div>
+        <div class="checkout-field"><label>Email</label><input type="email" id="auth-email" placeholder="voce@email.com"/></div>
+        <div class="checkout-field"><label>Senha</label><input type="password" id="auth-password" placeholder="Mínimo 6 caracteres"/></div>
+      </div>
+    ` : `
+      <div class="checkout-section" style="margin-top:20px">
+        <div class="checkout-field"><label>Email</label><input type="email" id="auth-email" placeholder="voce@email.com"/></div>
+        <div class="checkout-field"><label>Senha</label><input type="password" id="auth-password" placeholder="Sua senha"/></div>
+      </div>
+    `}
+    <div id="authError" class="auth-error hidden"></div>
+    <div style="padding:16px">
+      <button class="checkout-confirm-btn" id="authSubmitBtn" onclick="submitAuth()">${authMode === 'register' ? 'Criar conta' : 'Entrar'}</button>
+    </div>
+  `;
+}
+
+function switchAuthMode(mode) {
+  authMode = mode;
+  renderAuth();
+}
+
+async function handleAuthPhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const { url } = await api('/api/auth/avatar', { method: 'POST', body: form });
+    authPhotoUrl = url;
+    renderAuth();
+  } catch (err) {
+    showToast('Erro ao enviar foto: ' + err.message);
+  }
+}
+
+async function submitAuth() {
+  const errEl = document.getElementById('authError');
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('authSubmitBtn');
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  btn.disabled = true;
+  try {
+    let customer;
+    if (authMode === 'register') {
+      const name = document.getElementById('auth-name').value.trim();
+      if (!name) throw new Error('Digite seu nome');
+      customer = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, photoUrl: authPhotoUrl }) });
+    } else {
+      customer = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    }
+    currentCustomer = customer;
+    // Adopt the customer's persistent id — cart/favorites/orders made anonymously
+    // before login stay attached to it, and logging in from another browser
+    // pulls in this same customer's data since it's the same id server-side.
+    localStorage.setItem('bs_uid', customer.userId);
+    authPhotoUrl = null;
+    showToast(authMode === 'register' ? '🎉 Conta criada!' : `Bem-vinda de volta, ${customer.name}!`);
+    await refreshCart();
+    navigateTo('profile');
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function logoutCustomer() {
+  currentCustomer = null;
+  localStorage.setItem('bs_uid', crypto.randomUUID()); // fresh anonymous identity
+  cart = [];
+  favorites = new Set();
+  updateCartBadge();
+  showToast('Você saiu da conta');
+  navigateTo('feed');
+}
+
+// ─────────────────────────────────────────────────────────
+// COMMENTS
+// ─────────────────────────────────────────────────────────
+async function renderComments() {
+  const item = activeCommentsFeedItem;
+  const container = document.getElementById('commentsContent');
+  if (!item) { container.innerHTML = ''; return; }
+  container.innerHTML = `
+    <div class="screen-header" style="flex-shrink:0"><h2 class="screen-title">Comentários</h2></div>
+    <div class="comments-list scrollbar-hide" id="commentsList" style="flex:1;overflow-y:auto">Carregando…</div>
+    <div class="comment-input-bar">
+      <input type="text" id="commentInput" placeholder="${currentCustomer ? 'Escreva um comentário…' : 'Faça login para comentar'}" ${currentCustomer ? '' : 'disabled onclick="navigateTo(\'auth\')"'}/>
+      <button class="comment-send-btn" onclick="submitComment()"><span class="material-symbols-outlined">send</span></button>
+    </div>
+  `;
+  try {
+    const comments = await api(`/api/feed/${item.id}/comments`);
+    renderCommentsList(comments);
+  } catch (err) {
+    document.getElementById('commentsList').innerHTML = `<p style="padding:16px;color:var(--on-surface-variant)">Erro ao carregar comentários: ${err.message}</p>`;
+  }
+}
+
+function renderCommentsList(comments) {
+  const list = document.getElementById('commentsList');
+  if (!comments.length) {
+    list.innerHTML = `<p style="padding:24px 16px;text-align:center;color:var(--on-surface-variant)">Seja a primeira a comentar!</p>`;
+    return;
+  }
+  list.innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-avatar">${c.photoUrl ? `<img src="${c.photoUrl}"/>` : escapeHtml(c.name.charAt(0).toUpperCase())}</div>
+      <div class="comment-body">
+        <div class="comment-name">${escapeHtml(c.name)}</div>
+        <div class="comment-text">${escapeHtml(c.body)}</div>
+        <div class="comment-time">${new Date(c.createdAt).toLocaleString('pt-BR')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function submitComment() {
+  if (!currentCustomer) { navigateTo('auth'); return; }
+  const input = document.getElementById('commentInput');
+  const body = input.value.trim();
+  if (!body) return;
+  const item = activeCommentsFeedItem;
+  try {
+    await api(`/api/feed/${item.id}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
+    input.value = '';
+    const comments = await api(`/api/feed/${item.id}/comments`);
+    renderCommentsList(comments);
+    // Keep the feed's comment counter in sync for when the user goes back.
+    const feedItem = FEED_ITEMS.find(f => f.id === item.id);
+    if (feedItem) feedItem.comments = String(comments.length);
+  } catch (err) {
+    showToast('Erro ao comentar: ' + err.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -875,18 +1065,20 @@ if ('serviceWorker' in navigator) {
 // ─────────────────────────────────────────────────────────
 async function loadInitialData() {
   try {
-    const [products, feed, categories, favs, cartData] = await Promise.all([
+    const [products, feed, categories, favs, cartData, me] = await Promise.all([
       api('/api/products'),
       api('/api/feed'),
       api('/api/categories'),
       api('/api/favorites'),
       api('/api/cart'),
+      api('/api/auth/me'),
     ]);
     PRODUCTS = products;
     FEED_ITEMS = feed;
     CATEGORIES = ['Todos', ...categories];
     favorites = new Set(favs.map(p => p.id));
     cart = cartData;
+    currentCustomer = me; // null if the current X-User-Id isn't a registered customer
   } catch (err) {
     showToast('Erro ao carregar a loja: ' + err.message);
   }

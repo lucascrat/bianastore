@@ -1019,6 +1019,34 @@ a { text-decoration: none; color: inherit; }
 }
 .hidden { display: none !important; }
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* ─── AUTH (login/cadastro) ─────────────────────────── */
+.auth-tabs { display: flex; margin: 16px 12px 0; background: var(--surface-container-low); border-radius: 99px; padding: 4px; }
+.auth-tab { flex: 1; text-align: center; padding: 10px; border-radius: 99px; font-weight: 700; font-size: 14px; color: var(--on-surface-variant); cursor: pointer; }
+.auth-tab.active { background: var(--primary); color: #fff; }
+.auth-avatar-upload {
+  width: 88px; height: 88px; border-radius: 50%; margin: 20px auto 8px;
+  background: var(--surface-container-low); border: 2px dashed var(--outline);
+  display: flex; align-items: center; justify-content: center; position: relative;
+  cursor: pointer; overflow: hidden;
+}
+.auth-avatar-upload img { width: 100%; height: 100%; object-fit: cover; }
+.auth-avatar-upload .material-symbols-outlined { font-size: 32px; color: var(--outline); }
+.auth-avatar-hint { text-align: center; font-size: 12px; color: var(--on-surface-variant); margin-bottom: 8px; }
+.auth-error { margin: 0 16px; padding: 10px 14px; background: var(--error-container); color: var(--error); border-radius: 10px; font-size: 13px; }
+
+/* ─── COMMENTS ──────────────────────────────────────── */
+.comments-list { padding: 8px 16px; }
+.comment-item { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--surface-container-high); }
+.comment-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-fixed); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; overflow: hidden; }
+.comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.comment-body { flex: 1; }
+.comment-name { font-weight: 700; font-size: 13px; color: var(--on-surface); }
+.comment-text { font-size: 14px; color: var(--on-surface); margin-top: 2px; }
+.comment-time { font-size: 11px; color: var(--on-surface-variant); margin-top: 4px; }
+.comment-input-bar { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 16px; background: var(--surface-container-lowest); border-top: 1px solid var(--surface-container-high); }
+.comment-input-bar input { flex: 1; border: 1px solid var(--outline-variant); border-radius: 99px; padding: 10px 16px; font-size: 14px; font-family: 'Hanken Grotesk', sans-serif; outline: none; }
+.comment-send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 </style>
 </head>
@@ -1096,6 +1124,16 @@ a { text-decoration: none; color: inherit; }
   <!-- PROFILE -->
   <div class="screen" id="screen-profile">
     <div class="profile-screen scrollbar-hide" id="profileContent"></div>
+  </div>
+
+  <!-- AUTH (login / cadastro) -->
+  <div class="screen" id="screen-auth">
+    <div class="scrollbar-hide" style="height:100%;overflow-y:auto" id="authContent"></div>
+  </div>
+
+  <!-- COMMENTS -->
+  <div class="screen" id="screen-comments">
+    <div class="scrollbar-hide" style="height:100%;display:flex;flex-direction:column;overflow:hidden" id="commentsContent"></div>
   </div>
 
   <!-- ─ BOTTOM NAV ───────────────────────────────────── -->

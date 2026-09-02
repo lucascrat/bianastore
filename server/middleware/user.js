@@ -24,4 +24,18 @@ async function requireUserId(req, res, next) {
   }
 }
 
-module.exports = { requireUserId };
+// Stricter than requireUserId: also confirms the X-User-Id belongs to a real
+// registered customer (not just an anonymous browser id). Use for actions
+// that must show a real name/photo, like posting a comment.
+async function requireCustomer(req, res, next) {
+  try {
+    const { rows } = await pool.query('SELECT name, photo_url FROM customers WHERE user_id = $1', [req.userId]);
+    if (!rows.length) return res.status(401).json({ error: 'Faça login para continuar' });
+    req.customer = { name: rows[0].name, photoUrl: rows[0].photo_url };
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { requireUserId, requireCustomer };

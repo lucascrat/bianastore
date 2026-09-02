@@ -9,6 +9,8 @@ const favoritesRoutes = require('./routes/favorites');
 const ordersRoutes = require('./routes/orders');
 const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/auth');
+const socialRoutes = require('./routes/social');
 
 const app = express();
 app.set('trust proxy', 1); // behind Coolify/Traefik
@@ -42,6 +44,8 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/feed', socialRoutes);
 
 app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 

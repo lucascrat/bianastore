@@ -118,3 +118,40 @@ CREATE TABLE IF NOT EXISTS media_assets (
   size_bytes INT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Real customer accounts. Extends a `users` row (the same anonymous id already
+-- used for cart/favorites/orders) with login capability, so registering just
+-- "upgrades" whatever anonymous id the browser already had — existing cart
+-- contents carry over instead of being lost.
+CREATE TABLE IF NOT EXISTS customers (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  photo_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Real, persistent likes on feed items (one per customer per item). The
+-- displayed count is this table's real count PLUS feed_items.likes_count,
+-- which holds the seeded "social proof" baseline set at launch.
+CREATE TABLE IF NOT EXISTS likes (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  feed_item_id INT NOT NULL REFERENCES feed_items(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, feed_item_id)
+);
+
+-- Comments require a real customer account (checked in the route, not here)
+-- so every comment can show a real name + photo. Count shown to users is
+-- always COUNT(*) on this table — no seeded baseline, so it never disagrees
+-- with the actual list they see.
+CREATE TABLE IF NOT EXISTS comments (
+  id SERIAL PRIMARY KEY,
+  feed_item_id INT NOT NULL REFERENCES feed_items(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_comments_feed_item ON comments(feed_item_id);
