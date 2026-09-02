@@ -1,0 +1,47 @@
+{
+  "name": "BianaStore",
+  "short_name": "BianaStore",
+  "description": "Moda feminina com estilo — compre looks incríveis no seu celular",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#b0004a",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "lifestyle"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/feed.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Feed de vídeos BianaStore"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Carrinho",
+      "url": "/?view=cart",
+      "description": "Ver meu carrinho"
+    },
+    {
+      "name": "Favoritos",
+      "url": "/?view=favorites",
+      "description": "Meus itens favoritos"
+    }
+  ]
+}
