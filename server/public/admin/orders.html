@@ -42,9 +42,18 @@ async function load() {
       <td>${fmtMoney(o.total)}</td>
       <td>${paymentBadge[o.payment_status] || o.payment_status}</td>
       <td><span class="badge ${o.status}">${escapeHtml(o.status_label)}</span></td>
-      <td><a class="btn secondary" href="/admin/order-detail.html?id=${o.id}">Ver</a></td>
+      <td>
+        <a class="btn secondary" href="/admin/order-detail.html?id=${o.id}">Ver</a>
+        <button class="btn danger" onclick="removeOrder(${o.id}, '${escapeHtml(o.order_number)}')">Excluir</button>
+      </td>
     </tr>
   `).join('');
+}
+
+async function removeOrder(id, orderNumber) {
+  if (!confirm(`Excluir o pedido ${orderNumber}? Isso apaga o registro permanentemente — use só para pedidos de teste.`)) return;
+  await api(`/orders/${id}`, { method: 'DELETE' });
+  load();
 }
 load();
 </script>

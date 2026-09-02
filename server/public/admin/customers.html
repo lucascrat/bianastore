@@ -16,8 +16,8 @@
   <h2>Clientes</h2>
   <div class="card" style="padding:0">
     <table>
-      <thead><tr><th></th><th>Nome</th><th>Email</th><th>Desde</th><th>Pedidos</th><th>Total gasto</th></tr></thead>
-      <tbody id="rows"><tr><td colspan="6">Carregando…</td></tr></tbody>
+      <thead><tr><th></th><th>Nome</th><th>Email</th><th>Desde</th><th>Pedidos</th><th>Total gasto</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="7">Carregando…</td></tr></tbody>
     </table>
   </div>
 </main>
@@ -30,7 +30,7 @@ async function load() {
   const customers = await api('/customers');
   const rows = document.getElementById('rows');
   if (!customers.length) {
-    rows.innerHTML = '<tr><td colspan="6">Nenhum cliente cadastrado ainda.</td></tr>';
+    rows.innerHTML = '<tr><td colspan="7">Nenhum cliente cadastrado ainda.</td></tr>';
     return;
   }
   rows.innerHTML = customers.map((c) => `
@@ -41,8 +41,15 @@ async function load() {
       <td>${new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
       <td>${c.orders_count}</td>
       <td>${fmtMoney(c.total_spent)}</td>
+      <td><button class="btn danger" onclick="removeCustomer('${c.user_id}', '${escapeHtml(c.name)}')">Excluir</button></td>
     </tr>
   `).join('');
+}
+
+async function removeCustomer(userId, name) {
+  if (!confirm(`Excluir a conta de ${name}? O histórico de pedidos é mantido, só a conta de login é removida. Use para contas de teste/spam.`)) return;
+  await api(`/customers/${userId}`, { method: 'DELETE' });
+  load();
 }
 load();
 </script>

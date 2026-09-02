@@ -324,4 +324,24 @@ router.get('/customers', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Removes the customer account only (email/senha/foto) — order history stays
+// intact under the same anonymous user_id, it just won't show a name/photo
+// on comments anymore. Use for spam/test accounts, not real customers.
+router.delete('/customers/:userId', async (req, res, next) => {
+  try {
+    await pool.query('DELETE FROM customers WHERE user_id = $1', [req.params.userId]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---- Orders ----
+// Full delete (not soft) — for test/junk orders only. Real orders should be
+// cancelled via PATCH status instead so the customer keeps their history.
+router.delete('/orders/:id', async (req, res, next) => {
+  try {
+    await pool.query('DELETE FROM orders WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
