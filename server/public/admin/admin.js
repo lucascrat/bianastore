@@ -37,6 +37,7 @@ function renderNav(active) {
     { href: '/admin/index.html', label: 'Produtos', key: 'products' },
     { href: '/admin/feed.html', label: 'Feed', key: 'feed' },
     { href: '/admin/orders.html', label: 'Pedidos', key: 'orders' },
+    { href: '/admin/customers.html', label: 'Clientes', key: 'customers' },
   ];
   return items.map((i) => `<a href="${i.href}" class="${i.key === active ? 'active' : ''}">${i.label}</a>`).join('');
 }

@@ -170,3 +170,16 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_comments_feed_item ON comments(feed_item_id);
+
+-- Web Push subscriptions (one browser/device can have several; a user can
+-- have several devices). endpoint is unique per browser installation, so
+-- re-subscribing (e.g. after clearing site data) just replaces the old row.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT UNIQUE NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);

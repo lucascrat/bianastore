@@ -3,6 +3,7 @@ const QRCode = require('qrcode');
 const pool = require('../db/pool');
 const { requireUserId } = require('../middleware/user');
 const efi = require('../lib/efi');
+const push = require('../lib/push');
 
 const router = express.Router();
 router.use(requireUserId);
@@ -114,6 +115,7 @@ router.post('/', async (req, res, next) => {
         });
         await client.query('COMMIT');
         res.status(201).json(await serializeOrder(order.id));
+        push.sendPush(req.userId, { title: `Pedido ${order.order_number} recebido`, body: 'Pague o Pix para confirmar seu pedido.', url: '/?view=orders' }).catch(() => {});
       } catch (err) {
         await client.query('ROLLBACK');
         next(err);
@@ -179,6 +181,7 @@ router.post('/', async (req, res, next) => {
       });
       await client.query('COMMIT');
       res.status(201).json(await serializeOrder(order.id));
+      push.sendPush(req.userId, { title: `Pagamento aprovado! 🎉`, body: `Pedido ${order.order_number} confirmado e sendo preparado.`, url: '/?view=orders' }).catch(() => {});
     } catch (err) {
       await client.query('ROLLBACK');
       next(err);
@@ -204,6 +207,12 @@ router.get('/:id/check-payment', async (req, res, next) => {
     const status = await efi.getPixChargeStatus(order.payment_provider_id);
     if (status === 'CONCLUIDA') {
       await pool.query(`UPDATE orders SET payment_status='paid', updated_at=now() WHERE id=$1`, [order.id]);
+      await push.notifyUser(order.user_id, {
+        type: 'order', icon: 'check_circle',
+        title: 'Pagamento confirmado! 🎉',
+        body: `Seu Pix do pedido ${order.order_number} foi recebido. Preparando seu pedido!`,
+        url: '/?view=orders',
+      });
       return res.json({ paymentStatus: 'paid' });
     }
     res.json({ paymentStatus: 'pending' });

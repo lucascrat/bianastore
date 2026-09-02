@@ -11,6 +11,7 @@ const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const socialRoutes = require('./routes/social');
+const pushRoutes = require('./routes/push');
 
 const app = express();
 app.set('trust proxy', 1); // behind Coolify/Traefik
@@ -46,6 +47,7 @@ app.get('/api/config', (req, res) => {
     efiAccountId: process.env.EFI_ACCOUNT_ID || null,
     efiSandbox: process.env.EFI_SANDBOX === 'true',
     paymentsEnabled: Boolean(process.env.EFI_CLIENT_ID && process.env.EFI_ACCOUNT_ID),
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY || null,
   });
 });
 
@@ -57,6 +59,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/feed', socialRoutes);
+app.use('/api/push', pushRoutes);
 
 app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 

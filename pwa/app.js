@@ -569,10 +569,10 @@ function renderCheckout() {
           <span class="material-symbols-outlined">qr_code_2</span>
           <span class="payment-option-label">PIX — 5% de desconto</span>
         </label>
-        <label class="payment-option" style="${efiConfig.efiAccountId ? '' : 'opacity:0.5'}">
-          <input type="radio" name="payment" value="credit" onchange="onPaymentMethodChange()" ${efiConfig.efiAccountId ? '' : 'disabled'}/>
+        <label class="payment-option" style="${appConfig.efiAccountId ? '' : 'opacity:0.5'}">
+          <input type="radio" name="payment" value="credit" onchange="onPaymentMethodChange()" ${appConfig.efiAccountId ? '' : 'disabled'}/>
           <span class="material-symbols-outlined">credit_card</span>
-          <span class="payment-option-label">Cartão de Crédito${efiConfig.efiAccountId ? '' : ' (em breve)'}</span>
+          <span class="payment-option-label">Cartão de Crédito${appConfig.efiAccountId ? '' : ' (em breve)'}</span>
         </label>
       </div>
     </div>
@@ -638,7 +638,7 @@ function renderCheckout() {
 }
 
 let lastOrder = null;
-let efiConfig = { efiAccountId: null, efiSandbox: false, paymentsEnabled: false };
+let appConfig = { efiAccountId: null, efiSandbox: false, paymentsEnabled: false };
 let pixPollTimer = null;
 
 function onPaymentMethodChange() {
@@ -665,8 +665,8 @@ async function loadInstallmentOptions(brand) {
   const totalCents = Math.round((total + shippingCost) * 100);
   try {
     const result = await EfiPay.CreditCard
-      .setAccount(efiConfig.efiAccountId)
-      .setEnvironment(efiConfig.efiSandbox ? 'sandbox' : 'production')
+      .setAccount(appConfig.efiAccountId)
+      .setEnvironment(appConfig.efiSandbox ? 'sandbox' : 'production')
       .setBrand(brand)
       .setTotal(totalCents)
       .getInstallments();
@@ -719,8 +719,8 @@ async function placeOrder() {
       const brand = await EfiPay.CreditCard.setCardNumber(cardNumber).verifyCardBrand();
       if (brand === 'undefined' || brand === 'unsupported') throw new Error('Bandeira do cartão não reconhecida');
       const tokenResult = await EfiPay.CreditCard
-        .setAccount(efiConfig.efiAccountId)
-        .setEnvironment(efiConfig.efiSandbox ? 'sandbox' : 'production')
+        .setAccount(appConfig.efiAccountId)
+        .setEnvironment(appConfig.efiSandbox ? 'sandbox' : 'production')
         .setCreditCardData({
           brand, number: cardNumber, cvv,
           expirationMonth: expMonth.padStart(2, '0'), expirationYear: expYear,
@@ -1181,19 +1181,29 @@ async function renderNotifications() {
   content.innerHTML = `
     <div class="screen-header"><h2 class="screen-title">Notificações</h2></div>
     ${notifications.map(n => `
-      <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="showToast('${n.title}')">
+      <div class="notif-item ${n.unread ? 'unread' : ''}" id="notif-${n.id}" onclick="openNotification(${n.id})">
         <div class="notif-icon ${n.unread ? 'pink' : 'gray'}">
           <span class="material-symbols-outlined">${n.icon}</span>
         </div>
         <div class="notif-body">
-          <div class="notif-title">${n.title}</div>
-          <div class="notif-desc">${n.desc}</div>
+          <div class="notif-title">${escapeHtml(n.title)}</div>
+          <div class="notif-desc">${escapeHtml(n.desc)}</div>
           <div class="notif-time">${n.time}</div>
         </div>
         ${n.unread ? '<div class="notif-dot"></div>' : ''}
       </div>
     `).join('')}
   `;
+}
+
+async function openNotification(id) {
+  const row = document.getElementById('notif-' + id);
+  row?.classList.remove('unread');
+  row?.querySelector('.notif-icon')?.classList.replace('pink', 'gray');
+  row?.querySelector('.notif-dot')?.remove();
+  try {
+    await api(`/api/notifications/${id}/read`, { method: 'PATCH' });
+  } catch { /* already updated visually; a failed sync just gets fixed on next screen load */ }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1211,11 +1221,40 @@ function showToast(msg) {
 // ─────────────────────────────────────────────────────────
 // PUSH NOTIFICATIONS
 // ─────────────────────────────────────────────────────────
+// Converts the VAPID public key (base64url, as returned by /api/config) into
+// the Uint8Array shape PushManager.subscribe() requires.
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
 async function requestPushPermission() {
-  if (!('Notification' in window)) { showToast('Notificações não suportadas'); return; }
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('Notificações push não suportadas neste navegador');
+    return;
+  }
+  if (!appConfig.vapidPublicKey) {
+    showToast('Notificações push indisponíveis no momento');
+    return;
+  }
   const perm = await Notification.requestPermission();
-  if (perm === 'granted') showToast('🔔 Notificações ativadas!');
-  else showToast('Notificações bloqueadas');
+  if (perm !== 'granted') { showToast('Notificações bloqueadas'); return; }
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(appConfig.vapidPublicKey),
+      });
+    }
+    await api('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: subscription.toJSON() }) });
+    showToast('🔔 Notificações ativadas!');
+  } catch (err) {
+    showToast('Erro ao ativar notificações: ' + err.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1278,7 +1317,7 @@ async function loadInitialData() {
     favorites = new Set(favs.map(p => p.id));
     cart = cartData;
     currentCustomer = me; // null if the current X-User-Id isn't a registered customer
-    efiConfig = config; // { efiAccountId, efiSandbox, paymentsEnabled }
+    appConfig = config; // { efiAccountId, efiSandbox, paymentsEnabled }
   } catch (err) {
     showToast('Erro ao carregar a loja: ' + err.message);
   }

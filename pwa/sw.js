@@ -1,9 +1,11 @@
-const CACHE_NAME = 'bianastore-v5'; // bumped: pagamentos reais Pix + cartao (Efi)
+const CACHE_NAME = 'bianastore-v6'; // bumped: push notifications reais + icones PWA
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=4',
+  '/app.js?v=5',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // Install: cache static shell

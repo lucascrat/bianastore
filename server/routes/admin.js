@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const path = require('path');
 const pool = require('../db/pool');
 const r2 = require('../lib/r2');
+const push = require('../lib/push');
 const { requireAdmin } = require('../middleware/admin');
 
 const router = express.Router();
@@ -127,10 +128,29 @@ router.post('/products/:id/images', async (req, res, next) => {
 
 router.delete('/products/:id/images/:imageId', async (req, res, next) => {
   try {
-    await pool.query('DELETE FROM product_images WHERE id=$1 AND product_id=$2', [req.params.imageId, req.params.id]);
+    const { rows } = await pool.query(
+      'DELETE FROM product_images WHERE id=$1 AND product_id=$2 RETURNING url',
+      [req.params.imageId, req.params.id]
+    );
+    if (rows.length) await deleteFromR2IfOurs(rows[0].url);
     res.json({ ok: true });
   } catch (err) { next(err); }
 });
+
+// Only deletes objects that actually live in our own R2 bucket (matched by
+// the configured public base URL) — never touches externally-hosted images
+// (e.g. the placeholder lh3.googleusercontent.com URLs from the initial seed).
+async function deleteFromR2IfOurs(url) {
+  const base = (process.env.R2_PUBLIC_URL_BASE || '').replace(/\/$/, '');
+  if (!base || !url || !url.startsWith(base + '/')) return;
+  const key = url.slice(base.length + 1);
+  try {
+    await r2.deleteObject(key);
+    await pool.query('DELETE FROM media_assets WHERE r2_key = $1', [key]);
+  } catch (err) {
+    console.error('Failed to delete R2 object', key, err.message);
+  }
+}
 
 // ---- Categories ----
 router.get('/categories', async (req, res, next) => {
@@ -236,6 +256,14 @@ router.get('/media', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.delete('/media/:id', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('DELETE FROM media_assets WHERE id=$1 RETURNING r2_key', [req.params.id]);
+    if (rows.length) await r2.deleteObject(rows[0].r2_key).catch((err) => console.error('R2 delete failed:', err.message));
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
 // ---- Orders ----
 router.get('/orders', async (req, res, next) => {
   try {
@@ -257,6 +285,12 @@ router.get('/orders/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+const STATUS_NOTIFICATIONS = {
+  shipping: { icon: 'local_shipping', title: 'Pedido enviado! 📦', body: (n) => `Seu pedido ${n} está a caminho.` },
+  delivered: { icon: 'check_circle', title: 'Pedido entregue!', body: (n) => `Seu pedido ${n} foi entregue. Aproveite!` },
+  cancelled: { icon: 'cancel', title: 'Pedido cancelado', body: (n) => `Seu pedido ${n} foi cancelado.` },
+};
+
 router.patch('/orders/:id', async (req, res, next) => {
   try {
     const { status, statusLabel } = req.body;
@@ -265,7 +299,28 @@ router.patch('/orders/:id', async (req, res, next) => {
       [status || null, statusLabel || null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Order not found' });
-    res.json(rows[0]);
+    const order = rows[0];
+    const notif = status && STATUS_NOTIFICATIONS[status];
+    if (notif) {
+      push.notifyUser(order.user_id, {
+        type: 'order', icon: notif.icon, title: notif.title, body: notif.body(order.order_number), url: '/?view=orders',
+      }).catch((err) => console.error('Failed to notify order status change:', err.message));
+    }
+    res.json(order);
+  } catch (err) { next(err); }
+});
+
+// ---- Customers ----
+router.get('/customers', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT c.user_id, c.name, c.email, c.photo_url, c.created_at,
+        (SELECT COUNT(*)::int FROM orders o WHERE o.user_id = c.user_id) AS orders_count,
+        (SELECT COALESCE(SUM(o.total), 0) FROM orders o WHERE o.user_id = c.user_id AND o.payment_status = 'paid') AS total_spent
+      FROM customers c
+      ORDER BY c.created_at DESC
+    `);
+    res.json(rows);
   } catch (err) { next(err); }
 });
 
