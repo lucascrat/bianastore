@@ -82,10 +82,25 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_address JSONB NOT NULL,
   payment_method TEXT NOT NULL,
   shipping_method TEXT NOT NULL,
+  payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending','paid','failed','refunded')),
+  payment_provider_id TEXT,
+  pix_qr_code TEXT,
+  installments INT NOT NULL DEFAULT 1,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+
+-- Real payments (Efí) were added after the initial launch — these columns
+-- won't exist yet on an already-deployed database, so add them idempotently.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'pending';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_provider_id TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS pix_qr_code TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS installments INT NOT NULL DEFAULT 1;
+DO $$ BEGIN
+  ALTER TABLE orders ADD CONSTRAINT orders_payment_status_check CHECK (payment_status IN ('pending','paid','failed','refunded'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,

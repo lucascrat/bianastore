@@ -18,6 +18,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
 
+<!-- Efí card tokenization (turns card data into a payment_token client-side — raw card numbers never reach our server) -->
+<script src="https://cdn.jsdelivr.net/npm/payment-token-efi/dist/payment-token-efi-umd.min.js"></script>
+
 <style>
 /* ─── Design Tokens ─────────────────────────────────── */
 :root {
@@ -988,6 +991,43 @@ a { text-decoration: none; color: inherit; }
 }
 .confirm-secondary-btn:active { background: var(--surface-container-low); transform: scale(0.97); }
 
+/* ─── PIX PAYMENT SCREEN ────────────────────────────── */
+.pix-wrap { display: flex; flex-direction: column; align-items: center; padding: 32px 20px; text-align: center; }
+.pix-spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 3px solid var(--primary-fixed); border-top-color: var(--primary);
+  animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.pix-qr-box { background: #fff; padding: 16px; border-radius: 16px; box-shadow: 0 4px 20px var(--shadow-pink); margin: 16px 0; }
+.pix-qr-box img { width: 220px; height: 220px; display: block; }
+.pix-copia-box {
+  width: 100%; background: var(--surface-container-low); border-radius: 12px; padding: 12px 14px;
+  font-size: 12px; color: var(--on-surface-variant); word-break: break-all; text-align: left;
+  border: 1px solid var(--outline-variant); margin-bottom: 12px;
+}
+.pix-copy-btn {
+  padding: 12px 20px; border-radius: 99px; background: var(--primary); color: #fff;
+  font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 6px; width: 100%; justify-content: center;
+}
+.pix-paid-check {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-fixed), var(--primary));
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+}
+.pix-paid-check .material-symbols-outlined { font-size: 46px; color: #fff; }
+
+/* ─── CARD FORM (checkout) ──────────────────────────── */
+.card-brand-chip {
+  font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase;
+  letter-spacing: 0.04em; margin-top: 4px;
+}
+.installment-select {
+  width: 100%; padding: 10px 0; border: none; background: transparent; outline: none;
+  font-size: 15px; color: var(--on-surface); font-family: 'Hanken Grotesk', sans-serif;
+}
+
 /* ─── TOAST ─────────────────────────────────────────── */
 .toast {
   position: fixed;
@@ -1150,6 +1190,11 @@ a { text-decoration: none; color: inherit; }
     <div class="scrollbar-hide" style="height:100%;overflow-y:auto;padding-top:60px;" id="confirmContent"></div>
   </div>
 
+  <!-- PIX PAYMENT (waiting for confirmation) -->
+  <div class="screen" id="screen-pix-wait">
+    <div class="scrollbar-hide" style="height:100%;overflow-y:auto" id="pixWaitContent"></div>
+  </div>
+
   <!-- FAVORITES -->
   <div class="screen" id="screen-favorites">
     <div class="fav-screen scrollbar-hide" id="favContent"></div>
@@ -1224,6 +1269,6 @@ a { text-decoration: none; color: inherit; }
 
 </div>
 
-<script src="app.js?v=3" defer></script>
+<script src="app.js?v=4" defer></script>
 </body>
 </html>

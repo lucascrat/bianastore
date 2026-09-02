@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v4'; // bumped: Instagram/TikTok-style like animations
+const CACHE_NAME = 'bianastore-v5'; // bumped: pagamentos reais Pix + cartao (Efi)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=3',
+  '/app.js?v=4',
   '/manifest.json',
 ];
 

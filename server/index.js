@@ -38,6 +38,17 @@ app.use(session({
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// Public, non-secret config the frontend needs at boot (Efí's "Identificador
+// de Conta" is meant for client-side use, like a Stripe publishable key —
+// exposing it here means the frontend never needs a redeploy when it's set).
+app.get('/api/config', (req, res) => {
+  res.json({
+    efiAccountId: process.env.EFI_ACCOUNT_ID || null,
+    efiSandbox: process.env.EFI_SANDBOX === 'true',
+    paymentsEnabled: Boolean(process.env.EFI_CLIENT_ID && process.env.EFI_ACCOUNT_ID),
+  });
+});
+
 app.use('/api', productsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/favorites', favoritesRoutes);

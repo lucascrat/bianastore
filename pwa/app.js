@@ -68,11 +68,13 @@ function navigateTo(screen, data) {
   currentScreen = screen;
   // Scroll top-bar actions
   const leftIcon = document.getElementById('topBarLeftIcon');
-  if (['product','cart','checkout','confirm','notifications','auth','comments'].includes(screen)) {
+  if (['product','cart','checkout','confirm','notifications','auth','comments','pix-wait'].includes(screen)) {
     leftIcon.textContent = 'arrow_back';
   } else {
     leftIcon.textContent = 'menu';
   }
+  // Leaving the Pix wait screen stops its background polling.
+  if (screen !== 'pix-wait') clearInterval(pixPollTimer);
   // Render
   if (screen === 'shop') renderShop();
   if (screen === 'cart') renderCart();
@@ -85,10 +87,11 @@ function navigateTo(screen, data) {
   if (screen === 'confirm') renderConfirmation();
   if (screen === 'auth') renderAuth();
   if (screen === 'comments' && data) { activeCommentsFeedItem = data; renderComments(); }
+  if (screen === 'pix-wait') renderPixWait();
 }
 
 function handleTopLeft() {
-  const backs = ['product','cart','checkout','confirm','notifications','auth','comments'];
+  const backs = ['product','cart','checkout','confirm','notifications','auth','comments','pix-wait'];
   if (backs.includes(currentScreen)) {
     history.back();
     // Simple back logic
@@ -99,6 +102,7 @@ function handleTopLeft() {
     else if (currentScreen === 'notifications') navigateTo('profile');
     else if (currentScreen === 'auth') navigateTo('profile');
     else if (currentScreen === 'comments') navigateTo('feed');
+    else if (currentScreen === 'pix-wait') navigateTo('orders');
   }
 }
 
@@ -561,20 +565,41 @@ function renderCheckout() {
       </div>
       <div class="payment-options">
         <label class="payment-option">
-          <input type="radio" name="payment" value="pix" checked/>
+          <input type="radio" name="payment" value="pix" checked onchange="onPaymentMethodChange()"/>
           <span class="material-symbols-outlined">qr_code_2</span>
           <span class="payment-option-label">PIX — 5% de desconto</span>
         </label>
-        <label class="payment-option">
-          <input type="radio" name="payment" value="credit"/>
+        <label class="payment-option" style="${efiConfig.efiAccountId ? '' : 'opacity:0.5'}">
+          <input type="radio" name="payment" value="credit" onchange="onPaymentMethodChange()" ${efiConfig.efiAccountId ? '' : 'disabled'}/>
           <span class="material-symbols-outlined">credit_card</span>
-          <span class="payment-option-label">Cartão de Crédito</span>
+          <span class="payment-option-label">Cartão de Crédito${efiConfig.efiAccountId ? '' : ' (em breve)'}</span>
         </label>
-        <label class="payment-option">
-          <input type="radio" name="payment" value="boleto"/>
-          <span class="material-symbols-outlined">receipt_long</span>
-          <span class="payment-option-label">Boleto Bancário</span>
-        </label>
+      </div>
+    </div>
+
+    <div class="checkout-section" id="creditCardFields" style="display:none">
+      <div class="checkout-section-header">
+        <span class="material-symbols-outlined">badge</span>
+        <span class="checkout-section-title">Dados do Titular</span>
+      </div>
+      <div class="checkout-field"><label>Nome completo</label><input type="text" id="cust-name" placeholder="Como está no cartão"/></div>
+      <div style="display:flex">
+        <div class="checkout-field" style="flex:1"><label>CPF</label><input type="text" id="cust-cpf" placeholder="000.000.000-00" inputmode="numeric"/></div>
+        <div class="checkout-field" style="flex:1"><label>Telefone</label><input type="text" id="cust-phone" placeholder="(11) 90000-0000" inputmode="tel"/></div>
+      </div>
+      <div class="checkout-field"><label>E-mail</label><input type="email" id="cust-email" placeholder="voce@email.com"/></div>
+      <div class="checkout-field">
+        <label>Número do cartão</label>
+        <input type="text" id="card-number" placeholder="0000 0000 0000 0000" inputmode="numeric" maxlength="19" oninput="onCardNumberInput()"/>
+        <div class="card-brand-chip" id="cardBrandChip"></div>
+      </div>
+      <div style="display:flex">
+        <div class="checkout-field" style="flex:1"><label>Validade (MM/AAAA)</label><input type="text" id="card-expiry" placeholder="12/2029" inputmode="numeric" maxlength="7"/></div>
+        <div class="checkout-field" style="flex:1"><label>CVV</label><input type="text" id="card-cvv" placeholder="123" inputmode="numeric" maxlength="4"/></div>
+      </div>
+      <div class="checkout-field">
+        <label>Parcelas</label>
+        <select class="installment-select" id="installment-select"><option value="1">1x sem juros</option></select>
       </div>
     </div>
 
@@ -613,6 +638,48 @@ function renderCheckout() {
 }
 
 let lastOrder = null;
+let efiConfig = { efiAccountId: null, efiSandbox: false, paymentsEnabled: false };
+let pixPollTimer = null;
+
+function onPaymentMethodChange() {
+  const isCredit = document.querySelector('input[name="payment"]:checked')?.value === 'credit';
+  document.getElementById('creditCardFields').style.display = isCredit ? 'block' : 'none';
+}
+
+async function onCardNumberInput() {
+  const number = document.getElementById('card-number').value.replace(/\D/g, '');
+  const chip = document.getElementById('cardBrandChip');
+  if (number.length < 6) { chip.textContent = ''; return; }
+  try {
+    const brand = await EfiPay.CreditCard.setCardNumber(number).verifyCardBrand();
+    if (brand === 'undefined' || brand === 'unsupported') { chip.textContent = ''; return; }
+    chip.textContent = brand.toUpperCase();
+    await loadInstallmentOptions(brand);
+  } catch { /* keep typing, brand just isn't identifiable yet */ }
+}
+
+async function loadInstallmentOptions(brand) {
+  const select = document.getElementById('installment-select');
+  const { total } = getCartTotals();
+  const shippingCost = document.querySelector('input[name="shipping"]:checked')?.value === 'express' ? 14.9 : (total >= 299 ? 0 : 9.9);
+  const totalCents = Math.round((total + shippingCost) * 100);
+  try {
+    const result = await EfiPay.CreditCard
+      .setAccount(efiConfig.efiAccountId)
+      .setEnvironment(efiConfig.efiSandbox ? 'sandbox' : 'production')
+      .setBrand(brand)
+      .setTotal(totalCents)
+      .getInstallments();
+    const options = result?.[0]?.installments || [];
+    if (!options.length) return;
+    select.innerHTML = options.map(o => {
+      const val = (o.value / 100).toFixed(2).replace('.', ',');
+      return `<option value="${o.installment}">${o.installment}x de R$ ${val}${o.has_interest ? ' com juros' : ' sem juros'}</option>`;
+    }).join('');
+  } catch (err) {
+    // Non-fatal: the customer can still pay in 1x, just without the full simulated list.
+  }
+}
 
 async function placeOrder() {
   const btn = document.getElementById('checkoutConfirmBtn');
@@ -635,18 +702,99 @@ async function placeOrder() {
 
   btn.disabled = true;
   try {
-    lastOrder = await api('/api/orders', {
-      method: 'POST',
-      body: JSON.stringify({ shippingAddress, paymentMethod, shippingMethod }),
-    });
+    let payload = { shippingAddress, paymentMethod, shippingMethod };
+
+    if (paymentMethod === 'credit') {
+      const customer = { name: val('cust-name'), cpf: val('cust-cpf'), email: val('cust-email'), phone: val('cust-phone') };
+      const cardNumber = val('card-number').replace(/\D/g, '');
+      const cvv = val('card-cvv');
+      const [expMonth, expYear] = val('card-expiry').split('/');
+      const installments = parseInt(document.getElementById('installment-select').value, 10) || 1;
+      if (!customer.name || !customer.cpf || !customer.email || !customer.phone) {
+        throw new Error('Preencha seus dados (nome, CPF, e-mail e telefone)');
+      }
+      if (!cardNumber || !cvv || !expMonth || !expYear) {
+        throw new Error('Preencha os dados do cartão corretamente');
+      }
+      const brand = await EfiPay.CreditCard.setCardNumber(cardNumber).verifyCardBrand();
+      if (brand === 'undefined' || brand === 'unsupported') throw new Error('Bandeira do cartão não reconhecida');
+      const tokenResult = await EfiPay.CreditCard
+        .setAccount(efiConfig.efiAccountId)
+        .setEnvironment(efiConfig.efiSandbox ? 'sandbox' : 'production')
+        .setCreditCardData({
+          brand, number: cardNumber, cvv,
+          expirationMonth: expMonth.padStart(2, '0'), expirationYear: expYear,
+          holderName: customer.name, holderDocument: customer.cpf.replace(/\D/g, ''),
+        })
+        .getPaymentToken();
+      payload = { ...payload, paymentToken: tokenResult.payment_token, installments, customer };
+    }
+
+    lastOrder = await api('/api/orders', { method: 'POST', body: JSON.stringify(payload) });
     cart = [];
     updateCartBadge();
-    navigateTo('confirm');
+
+    if (paymentMethod === 'pix') {
+      navigateTo('pix-wait');
+    } else {
+      navigateTo('confirm');
+    }
   } catch (err) {
-    showToast('Erro ao confirmar pedido: ' + err.message);
+    showToast(err.error_description || err.message || 'Erro ao confirmar pedido');
   } finally {
     btn.disabled = false;
   }
+}
+
+// ─────────────────────────────────────────────────────────
+// PIX WAIT (polling — no webhook needed, see server/routes/orders.js)
+// ─────────────────────────────────────────────────────────
+function renderPixWait() {
+  clearInterval(pixPollTimer);
+  const content = document.getElementById('pixWaitContent');
+  const order = lastOrder;
+  if (!order) { content.innerHTML = ''; return; }
+  const fmt = (v) => `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
+
+  const renderPending = () => `
+    <div class="pix-wrap">
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">Pague com Pix</h2>
+      <p style="color:var(--on-surface-variant);font-size:14px;margin-bottom:8px">Escaneie o QR code ou copie o código abaixo</p>
+      <div class="pix-qr-box"><img src="${order.pixQrImage}" alt="QR code Pix"/></div>
+      <div style="font-size:22px;font-weight:800;color:var(--primary);margin-bottom:16px">${fmt(order.total)}</div>
+      <div class="pix-copia-box" id="pixCopiaText">${order.pixQrCode}</div>
+      <button class="pix-copy-btn" onclick="copyPixCode()">
+        <span class="material-symbols-outlined" style="font-size:18px">content_copy</span> Copiar código Pix
+      </button>
+      <div style="margin-top:24px" class="pix-spinner"></div>
+      <p style="color:var(--on-surface-variant);font-size:13px">Aguardando confirmação do pagamento…</p>
+      <p style="color:var(--on-surface-variant);font-size:12px;margin-top:4px">Isso é automático — a página atualiza sozinha assim que o Pix cair.</p>
+    </div>
+  `;
+
+  content.innerHTML = renderPending();
+
+  pixPollTimer = setInterval(async () => {
+    try {
+      const { paymentStatus } = await api(`/api/orders/${order.dbId}/check-payment`);
+      if (paymentStatus === 'paid') {
+        clearInterval(pixPollTimer);
+        content.innerHTML = `
+          <div class="pix-wrap">
+            <div class="pix-paid-check"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">check</span></div>
+            <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800">Pagamento confirmado! 🎉</h2>
+          </div>
+        `;
+        setTimeout(() => navigateTo('confirm'), 1400);
+      }
+    } catch { /* transient network hiccup — next tick retries */ }
+  }, 3000);
+}
+
+function copyPixCode() {
+  const text = document.getElementById('pixCopiaText')?.textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => showToast('Código Pix copiado!')).catch(() => showToast('Não foi possível copiar'));
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1115,13 +1263,14 @@ if ('serviceWorker' in navigator) {
 // ─────────────────────────────────────────────────────────
 async function loadInitialData() {
   try {
-    const [products, feed, categories, favs, cartData, me] = await Promise.all([
+    const [products, feed, categories, favs, cartData, me, config] = await Promise.all([
       api('/api/products'),
       api('/api/feed'),
       api('/api/categories'),
       api('/api/favorites'),
       api('/api/cart'),
       api('/api/auth/me'),
+      api('/api/config'),
     ]);
     PRODUCTS = products;
     FEED_ITEMS = feed;
@@ -1129,6 +1278,7 @@ async function loadInitialData() {
     favorites = new Set(favs.map(p => p.id));
     cart = cartData;
     currentCustomer = me; // null if the current X-User-Id isn't a registered customer
+    efiConfig = config; // { efiAccountId, efiSandbox, paymentsEnabled }
   } catch (err) {
     showToast('Erro ao carregar a loja: ' + err.message);
   }
