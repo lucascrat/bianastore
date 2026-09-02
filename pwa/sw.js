@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v6'; // bumped: push notifications reais + icones PWA
+const CACHE_NAME = 'bianastore-v7'; // bumped: auth screen com header + botões separados entrar/cadastrar
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=5',
+  '/app.js?v=6',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

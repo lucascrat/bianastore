@@ -944,7 +944,11 @@ async function renderProfile() {
       <div class="profile-avatar">${avatarHtml}</div>
       <div class="profile-name">${loggedIn ? escapeHtml(currentCustomer.name) : 'Visitante'}</div>
       <div class="profile-email">${loggedIn ? escapeHtml(currentCustomer.email) : 'Faça login para salvar seus dados'}</div>
-      ${!loggedIn ? `<button style="margin-top:8px;padding:10px 24px;border-radius:99px;background:#fff;color:var(--primary);font-weight:700;font-family:'Plus Jakarta Sans',sans-serif" onclick="navigateTo('auth')">Entrar / Criar conta</button>` : ''}
+      ${!loggedIn ? `
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button style="padding:10px 22px;border-radius:99px;background:#fff;color:var(--primary);font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;border:none;cursor:pointer" onclick="openAuth('login')">Entrar</button>
+          <button style="padding:10px 22px;border-radius:99px;background:var(--primary);color:#fff;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;border:none;cursor:pointer" onclick="openAuth('register')">Criar conta</button>
+        </div>` : ''}
     </div>
     <div class="profile-stats">
       <div class="profile-stat">
@@ -998,9 +1002,15 @@ async function renderProfile() {
         <span class="material-symbols-outlined" style="color:var(--error)">logout</span>
         <span class="profile-menu-item-label" style="color:var(--error)">Sair</span>
       </div>` : `
-      <div class="profile-menu-item" onclick="navigateTo('auth')">
+      <div class="profile-menu-item" onclick="openAuth('login')">
         <span class="material-symbols-outlined" style="color:var(--primary)">login</span>
-        <span class="profile-menu-item-label" style="color:var(--primary)">Entrar / Criar conta</span>
+        <span class="profile-menu-item-label" style="color:var(--primary)">Entrar</span>
+        <span class="material-symbols-outlined arrow">chevron_right</span>
+      </div>
+      <div class="profile-menu-item" onclick="openAuth('register')">
+        <span class="material-symbols-outlined" style="color:var(--primary)">person_add</span>
+        <span class="profile-menu-item-label" style="color:var(--primary)">Criar conta</span>
+        <span class="material-symbols-outlined arrow">chevron_right</span>
       </div>`}
     </div>
   `;
@@ -1016,6 +1026,12 @@ function escapeHtml(str) {
 function renderAuth() {
   const content = document.getElementById('authContent');
   content.innerHTML = `
+    <div class="screen-header" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:12px 16px">
+      <button class="icon-btn" onclick="navigateTo('profile')" aria-label="Voltar">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h2 class="screen-title" style="margin:0">${authMode === 'register' ? 'Criar conta' : 'Entrar'}</h2>
+    </div>
     <div class="auth-tabs">
       <div class="auth-tab ${authMode === 'login' ? 'active' : ''}" onclick="switchAuthMode('login')">Entrar</div>
       <div class="auth-tab ${authMode === 'register' ? 'active' : ''}" onclick="switchAuthMode('register')">Criar conta</div>
@@ -1042,6 +1058,12 @@ function renderAuth() {
       <button class="checkout-confirm-btn" id="authSubmitBtn" onclick="submitAuth()">${authMode === 'register' ? 'Criar conta' : 'Entrar'}</button>
     </div>
   `;
+}
+
+// Opens the auth screen pre-set to the given mode ('login' or 'register')
+function openAuth(mode) {
+  authMode = mode || 'login';
+  navigateTo('auth');
 }
 
 function switchAuthMode(mode) {
