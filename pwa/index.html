@@ -277,7 +277,12 @@ a { text-decoration: none; color: inherit; }
 .feed-action-btn:active .icon-circle { transform: scale(0.85); }
 .feed-action-btn.liked .icon-circle { background: rgba(176,0,74,0.6); }
 .feed-action-btn .material-symbols-outlined { font-size: 24px; color: #fff; }
-.feed-action-btn span:last-child {
+/* Was ".feed-action-btn span:last-child" — but the icon <span> is the sole
+   child of .icon-circle, so it also matched ":last-child" and its higher
+   specificity silently overrode the icon font-family back to Hanken Grotesk
+   (icons rendered as literal text: "favorite", "share"...). Scoped to a
+   dedicated class instead so it can never again catch the icon span. */
+.feed-action-label {
   font-size: 11px; font-weight: 700;
   font-family: 'Hanken Grotesk', sans-serif;
   letter-spacing: 0.04em;
@@ -1281,6 +1286,6 @@ a { text-decoration: none; color: inherit; }
 
 </div>
 
-<script src="app.js?v=6" defer></script>
+<script src="app.js?v=7" defer></script>
 </body>
 </html>

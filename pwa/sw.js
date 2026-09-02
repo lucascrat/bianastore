@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v8'; // bumped: fonte Material Symbols auto-hospedada (sem dependência de CDN externo)
+const CACHE_NAME = 'bianastore-v9'; // bumped: corrige bug de especificidade CSS que sobrescrevia a fonte dos icones do feed
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=6',
+  '/app.js?v=7',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

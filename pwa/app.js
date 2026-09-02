@@ -128,15 +128,15 @@ function renderFeed() {
           <div class="icon-circle">
             <span class="material-symbols-outlined" id="feedLikeIcon${i}" style="${item.likedByMe ? "font-variation-settings:'FILL' 1" : ''}">favorite</span>
           </div>
-          <span id="feedLikeCount${i}">${item.likes}</span>
+          <span class="feed-action-label" id="feedLikeCount${i}">${item.likes}</span>
         </button>
         <button class="feed-action-btn" onclick="event.stopPropagation();navigateTo('comments', FEED_ITEMS.find(f=>f.id==${item.id}))">
           <div class="icon-circle"><span class="material-symbols-outlined">chat_bubble</span></div>
-          <span id="feedCommentCount${i}">${item.comments}</span>
+          <span class="feed-action-label" id="feedCommentCount${i}">${item.comments}</span>
         </button>
         <button class="feed-action-btn" onclick="event.stopPropagation();handleShare(${item.product.id})">
           <div class="icon-circle"><span class="material-symbols-outlined">share</span></div>
-          <span>Compartilhar</span>
+          <span class="feed-action-label">Compartilhar</span>
         </button>
       </div>
       <div class="feed-product-card" onclick="event.stopPropagation();navigateTo('product', PRODUCTS.find(p=>p.id==${item.product.id}))">
