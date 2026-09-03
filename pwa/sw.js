@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v9'; // bumped: corrige bug de especificidade CSS que sobrescrevia a fonte dos icones do feed
+const CACHE_NAME = 'bianastore-v10'; // bumped: COMPRAR AGORA do feed abre modal de urgencia e vai direto pro checkout
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=7',
+  '/app.js?v=8',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

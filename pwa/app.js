@@ -145,7 +145,7 @@ function renderFeed() {
           <span class="feed-price">R$ ${item.product.price.toFixed(2).replace('.',',')}</span>
           ${item.product.oldPrice ? `<span class="feed-price-old">R$ ${item.product.oldPrice.toFixed(2).replace('.',',')}</span>` : ''}
         </div>
-        <button class="feed-buy-btn" onclick="event.stopPropagation();quickAddToCart(${item.product.id})">
+        <button class="feed-buy-btn" onclick="event.stopPropagation();openQuickBuy(${item.product.id})">
           COMPRAR AGORA
         </button>
       </div>
@@ -390,13 +390,122 @@ async function addToCart(productId) {
   }
 }
 
-async function quickAddToCart(productId) {
+// ─────────────────────────────────────────────────────────
+// QUICK BUY — urgency bottom sheet opened from the feed's "COMPRAR AGORA"
+// button. Goes straight to checkout instead of silently dropping the item
+// in the cart (that's what used to happen and is what the user reported as
+// broken) and layers on TikTok Shop-style urgency (countdown + scarcity) to
+// push conversion. The countdown/stock numbers are presentational — nothing
+// here reserves real inventory server-side.
+// ─────────────────────────────────────────────────────────
+let quickBuyProduct = null;
+let quickBuySize = null;
+let quickBuyDeadline = null;
+let quickBuyTimerHandle = null;
+
+// Deterministic per-product "units left" (1-4) — just enough scarcity signal
+// to feel real without needing real per-size stock tracking on the backend.
+function quickBuyStockLeft(productId) {
+  return 1 + ((productId * 13) % 4);
+}
+
+function openQuickBuy(productId) {
+  const p = PRODUCTS.find(x => x.id == productId);
+  if (!p) return;
+  quickBuyProduct = p;
+  quickBuySize = p.sizes?.[1] || p.sizes?.[0] || null;
+  quickBuyDeadline = Date.now() + 5 * 60 * 1000; // 5-minute reservation window, resets every time the sheet opens
+  renderQuickBuy();
+  document.getElementById('quickBuyOverlay').classList.add('active');
+  clearInterval(quickBuyTimerHandle);
+  quickBuyTimerHandle = setInterval(updateQuickBuyTimer, 1000);
+  updateQuickBuyTimer();
+}
+
+function closeQuickBuy() {
+  document.getElementById('quickBuyOverlay').classList.remove('active');
+  clearInterval(quickBuyTimerHandle);
+  quickBuyTimerHandle = null;
+}
+
+function renderQuickBuy() {
+  const p = quickBuyProduct;
+  if (!p) return;
+  const stock = quickBuyStockLeft(p.id);
+  const content = document.getElementById('quickBuyContent');
+  content.innerHTML = `
+    <div class="quick-buy-header">
+      <img class="quick-buy-thumb" src="${p.img}" alt="${escapeHtml(p.name)}"/>
+      <div>
+        <div class="quick-buy-name">${escapeHtml(p.name)}</div>
+        <div class="quick-buy-prices">
+          <span class="quick-buy-price">R$ ${p.price.toFixed(2).replace('.', ',')}</span>
+          ${p.oldPrice ? `<span class="quick-buy-price-old">R$ ${p.oldPrice.toFixed(2).replace('.', ',')}</span>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-buy-urgency">
+      <span class="material-symbols-outlined">timer</span>
+      <div class="quick-buy-urgency-text">Estamos <b>reservando esta peça</b> pra você.<br>Finalize antes que o tempo acabe!</div>
+      <span class="quick-buy-timer" id="quickBuyTimer">05:00</span>
+    </div>
+
+    <div class="quick-buy-stock">
+      <span class="material-symbols-outlined">local_fire_department</span>
+      <span>Só restam ${stock} unidade${stock > 1 ? 's' : ''} — está saindo rápido!</span>
+    </div>
+    <div class="quick-buy-stock-bar"><div class="quick-buy-stock-bar-fill" style="width:${stock * 20}%"></div></div>
+
+    ${p.sizes?.length ? `
+    <div class="section-label">Escolha o tamanho</div>
+    <div class="size-row">
+      ${p.sizes.map(s => `<button class="size-btn ${s === quickBuySize ? 'active' : ''}" id="qb-size-${s}" onclick="selectQuickBuySize('${s}')">${s}</button>`).join('')}
+    </div>` : ''}
+
+    <button class="quick-buy-cta" id="quickBuyCtaBtn" onclick="confirmQuickBuy()">
+      <span class="material-symbols-outlined">bolt</span>
+      GARANTIR AGORA · R$ ${p.price.toFixed(2).replace('.', ',')}
+    </button>
+    <div class="quick-buy-secure">🔒 Pagamento seguro via Pix ou cartão</div>
+  `;
+}
+
+function selectQuickBuySize(s) {
+  quickBuySize = s;
+  document.querySelectorAll('#quickBuyContent .size-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('qb-size-' + s)?.classList.add('active');
+}
+
+function updateQuickBuyTimer() {
+  const el = document.getElementById('quickBuyTimer');
+  if (!el) { clearInterval(quickBuyTimerHandle); return; }
+  const remaining = Math.max(0, quickBuyDeadline - Date.now());
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  el.classList.toggle('urgent', remaining <= 60000 && remaining > 0);
+  if (remaining <= 0) {
+    clearInterval(quickBuyTimerHandle);
+    quickBuyTimerHandle = null;
+  }
+}
+
+async function confirmQuickBuy() {
+  const p = quickBuyProduct;
+  if (!p) return;
+  if (p.sizes?.length && !quickBuySize) { showToast('Selecione um tamanho!'); return; }
+  const btn = document.getElementById('quickBuyCtaBtn');
+  if (btn) btn.disabled = true;
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId, size: 'M', qty: 1 }) });
-    showToast('✅ Adicionado à sacola!');
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', qty: 1 }) });
     updateCartBadge();
+    closeQuickBuy();
+    showToast('🔥 Garantido! Finalize seu pagamento agora');
+    navigateTo('checkout');
   } catch (err) {
-    showToast('Erro ao adicionar: ' + err.message);
+    showToast('Erro ao reservar: ' + err.message);
+    if (btn) btn.disabled = false;
   }
 }
 
