@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bianastore-v11'; // bumped: icone de adicionar a sacola no feed e nos cards + contador real no badge do carrinho
+const CACHE_NAME = 'bianastore-v12'; // bumped: corrige barra "Instalar" que vazava e bloqueava cliques no icone da sacola
 const STATIC_ASSETS = [
   '/',
   '/index.html',

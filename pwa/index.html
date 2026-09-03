@@ -1103,7 +1103,15 @@ a { text-decoration: none; color: inherit; }
 /* ─── INSTALL BANNER ────────────────────────────────── */
 .install-banner {
   position: fixed;
-  top: 68px;
+  /* Was "top:68px" + "transform:translateY(-120%)" — for a 74px-tall banner
+     that only pushes it to top:-20.8px, leaving ~53px still inside the
+     viewport, overlapping the top bar's z-index:100 with this element's
+     z-index:200. That invisible-looking strip sat on top of the cart icon
+     and silently ate its clicks even before the banner was ever shown.
+     Animating "top" itself between a value guaranteed off-screen and its
+     resting spot avoids the percentage math entirely, and pointer-events
+     ensures the hidden banner never intercepts a tap regardless. */
+  top: -200px;
   left: 12px; right: 12px;
   background: var(--surface-container-lowest);
   border-radius: 16px;
@@ -1111,11 +1119,11 @@ a { text-decoration: none; color: inherit; }
   display: flex; align-items: center; gap: 12px;
   box-shadow: 0 8px 32px var(--shadow-pink);
   z-index: 200;
-  transform: translateY(-120%);
-  transition: transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+  transition: top 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
   border: 1px solid var(--outline-variant);
+  pointer-events: none;
 }
-.install-banner.show { transform: translateY(0); }
+.install-banner.show { top: 68px; pointer-events: auto; }
 .install-banner-icon {
   width: 44px; height: 44px;
   border-radius: 12px;
