@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v10'; // bumped: COMPRAR AGORA do feed abre modal de urgencia e vai direto pro checkout
+const CACHE_NAME = 'bianastore-v11'; // bumped: icone de adicionar a sacola no feed e nos cards + contador real no badge do carrinho
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=8',
+  '/app.js?v=9',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

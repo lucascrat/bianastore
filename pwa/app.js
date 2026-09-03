@@ -130,6 +130,10 @@ function renderFeed() {
           </div>
           <span class="feed-action-label" id="feedLikeCount${i}">${item.likes}</span>
         </button>
+        <button class="feed-action-btn" id="feedCartBtn${i}" onclick="event.stopPropagation();addToBagFromFeed(${item.product.id}, ${i})">
+          <div class="icon-circle"><span class="material-symbols-outlined">add_shopping_cart</span></div>
+          <span class="feed-action-label">Sacola</span>
+        </button>
         <button class="feed-action-btn" onclick="event.stopPropagation();navigateTo('comments', FEED_ITEMS.find(f=>f.id==${item.id}))">
           <div class="icon-circle"><span class="material-symbols-outlined">chat_bubble</span></div>
           <span class="feed-action-label" id="feedCommentCount${i}">${item.comments}</span>
@@ -251,6 +255,9 @@ function renderShop() {
         <img class="product-card-img" src="${p.img}" alt="${p.name}" loading="lazy"/>
         <button class="product-card-fav ${favorites.has(p.id) ? 'active' : ''}" onclick="event.stopPropagation();toggleFav(${p.id})" id="fav-card-${p.id}">
           <span class="material-symbols-outlined" style="font-variation-settings:'FILL' ${favorites.has(p.id)?1:0}">${favorites.has(p.id)?'favorite':'favorite_border'}</span>
+        </button>
+        <button class="product-card-cart-btn" onclick="addToBagFromCard(${p.id}, event)">
+          <span class="material-symbols-outlined">add_shopping_cart</span>
         </button>
         <div class="product-card-badge">R$ ${p.price.toFixed(2).replace('.',',')}</div>
       </div>
@@ -385,6 +392,7 @@ async function addToCart(productId) {
     cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId, size: selectedSize, qty: 1 }) });
     showToast('✅ Adicionado à sacola!');
     updateCartBadge();
+    bumpCartIcon();
   } catch (err) {
     showToast('Erro ao adicionar: ' + err.message);
   }
@@ -500,6 +508,7 @@ async function confirmQuickBuy() {
   try {
     cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', qty: 1 }) });
     updateCartBadge();
+    bumpCartIcon();
     closeQuickBuy();
     showToast('🔥 Garantido! Finalize seu pagamento agora');
     navigateTo('checkout');
@@ -512,7 +521,60 @@ async function confirmQuickBuy() {
 function updateCartBadge() {
   const dot = document.getElementById('cartDot');
   const total = cart.reduce((s, i) => s + i.qty, 0);
-  dot.style.display = total > 0 ? 'block' : 'none';
+  dot.textContent = total > 99 ? '99+' : String(total);
+  dot.classList.toggle('show', total > 0);
+}
+
+// Small pop/rotate feedback on the top-bar cart icon whenever an item is
+// added — reinforces that the piece was "reserved" without leaving the feed/grid.
+function bumpCartIcon() {
+  const btn = document.querySelector('.top-bar-icon.cart-badge');
+  if (!btn) return;
+  btn.classList.remove('cart-bump');
+  void btn.offsetWidth; // restart the animation even if it's already mid-play
+  btn.classList.add('cart-bump');
+}
+
+// Default size for a quick "add to bag" action where there's no size-picker
+// UI (feed / grid cards) — same middle size the product detail page
+// defaults to, or 'Único' when the product has no size options at all.
+function defaultSizeFor(p) {
+  return p.sizes?.[1] || p.sizes?.[0] || 'Único';
+}
+
+// Adds to the cart straight from the feed without leaving it or triggering
+// the quick-buy urgency flow — lets the customer keep browsing and "reserve"
+// several pieces before deciding to check out.
+async function addToBagFromFeed(productId, i) {
+  const p = PRODUCTS.find(x => x.id == productId);
+  if (!p) return;
+  const circle = document.getElementById('feedCartBtn' + i)?.querySelector('.icon-circle');
+  try {
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), qty: 1 }) });
+    updateCartBadge();
+    bumpCartIcon();
+    if (circle) { circle.classList.remove('pop'); void circle.offsetWidth; circle.classList.add('pop'); }
+    showToast('🛍️ Reservado na sacola! Continue explorando');
+  } catch (err) {
+    showToast('Erro ao adicionar: ' + err.message);
+  }
+}
+
+// Same quick add, from a product card in the Shop or Favorites grid.
+async function addToBagFromCard(productId, event) {
+  event?.stopPropagation();
+  const p = PRODUCTS.find(x => x.id == productId);
+  if (!p) return;
+  const btn = event?.currentTarget;
+  try {
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), qty: 1 }) });
+    updateCartBadge();
+    bumpCartIcon();
+    if (btn) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+    showToast('🛍️ Reservado na sacola!');
+  } catch (err) {
+    showToast('Erro ao adicionar: ' + err.message);
+  }
 }
 
 async function changeQty(key, delta) {
@@ -603,6 +665,9 @@ function renderCart() {
       <span class="cart-count">${count} ${count===1?'item':'itens'}</span>
     </div>
     ${itemsHtml}
+    <button class="cart-add-more-btn" onclick="navigateTo('shop')">
+      <span class="material-symbols-outlined">add</span> Continuar reservando peças
+    </button>
     <div class="cart-summary">
       <div class="cart-summary-title">Resumo do Pedido</div>
       <div class="cart-row"><span>Subtotal</span><span>${fmt(sub)}</span></div>
@@ -973,6 +1038,9 @@ async function renderFavorites() {
             <img class="product-card-img" src="${p.img}" alt="${p.name}" loading="lazy"/>
             <button class="product-card-fav active" onclick="event.stopPropagation();toggleFav(${p.id}).then(renderFavorites)">
               <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">favorite</span>
+            </button>
+            <button class="product-card-cart-btn" onclick="addToBagFromCard(${p.id}, event)">
+              <span class="material-symbols-outlined">add_shopping_cart</span>
             </button>
             <div class="product-card-badge">R$ ${p.price.toFixed(2).replace('.',',')}</div>
           </div>
