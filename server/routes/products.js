@@ -21,6 +21,7 @@ function serializeProduct(row) {
     desc: row.description,
     rating: row.rating !== null ? Number(row.rating) : 0,
     reviews: row.reviews_count,
+    createdAt: row.created_at, // used by the Shop screen's "Mais recentes" sort
     // [{color,size,stock}] — lets the frontend know what's actually
     // available before the customer tries to check out (see product_variants).
     variants: row.variants || [],

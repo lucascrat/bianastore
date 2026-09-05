@@ -34,7 +34,7 @@ async function login() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao entrar');
-    window.location.href = '/admin/index.html';
+    window.location.href = '/admin/dashboard.html';
   } catch (e) {
     err.textContent = e.message;
     err.style.display = 'block';

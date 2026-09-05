@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v13'; // bumped: estoque real por cor+tamanho (cor agora viaja no carrinho/pedido)
+const CACHE_NAME = 'bianastore-v14'; // bumped: frete real por regiao, cupom de desconto, busca/ordenacao no Shop, CEP automatico, corrige voltar/compartilhar
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=10',
+  '/app.js?v=11',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

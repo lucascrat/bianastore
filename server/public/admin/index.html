@@ -17,6 +17,9 @@
     <h2>Produtos</h2>
     <a class="btn" href="/admin/product-edit.html">+ Novo Produto</a>
   </div>
+  <div class="field" style="max-width:320px">
+    <input type="text" id="search" placeholder="Buscar por nome…" oninput="render()"/>
+  </div>
   <div class="card" style="padding:0">
     <table>
       <thead><tr><th></th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Status</th><th></th></tr></thead>
@@ -28,12 +31,24 @@
 <script>
 document.getElementById('nav').innerHTML = renderNav('products');
 
+let allProducts = [];
+
 async function load() {
   await requireAuth();
-  const products = await api('/products');
+  allProducts = await api('/products');
+  render();
+}
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const products = q ? allProducts.filter((p) => p.name.toLowerCase().includes(q)) : allProducts;
   const rows = document.getElementById('rows');
-  if (!products.length) {
+  if (!allProducts.length) {
     rows.innerHTML = '<tr><td colspan="6">Nenhum produto ainda.</td></tr>';
+    return;
+  }
+  if (!products.length) {
+    rows.innerHTML = `<tr><td colspan="6">Nenhum produto encontrado pra "${escapeHtml(q)}".</td></tr>`;
     return;
   }
   rows.innerHTML = products.map((p) => {

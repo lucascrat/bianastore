@@ -93,8 +93,12 @@ function navigateTo(screen, data) {
 function handleTopLeft() {
   const backs = ['product','cart','checkout','confirm','notifications','auth','comments','pix-wait'];
   if (backs.includes(currentScreen)) {
-    history.back();
-    // Simple back logic
+    // Was calling the browser's real history.back() here too — but this app
+    // never pushes history entries (navigateTo() only swaps screens in
+    // memory), so there was nothing for it to go back to. It ended up
+    // navigating the real browser away from the app entirely (jarring in an
+    // installed/standalone PWA, where that can look like the app closing).
+    // The explicit navigateTo() calls below are the actual navigation.
     if (currentScreen === 'product') navigateTo('shop');
     else if (currentScreen === 'cart') navigateTo('shop');
     else if (currentScreen === 'checkout') navigateTo('cart');
@@ -229,17 +233,39 @@ async function toggleFeedLike(feedItemId, i) {
 }
 
 function handleShare(productId) {
-  const p = PRODUCTS.find(x => x.id === productId);
+  const p = PRODUCTS.find(x => x.id == productId);
+  if (!p) return;
+  // Was sharing location.href — always the generic app URL (SPA, no real
+  // routing), so whoever received the link just landed on the home feed
+  // instead of the product being shown off. ?product=ID is picked up by
+  // init() above and opens that exact product.
+  const shareUrl = `${location.origin}${location.pathname}?product=${p.id}`;
+  const shareText = `Olha que lindo: ${p.name} por R$ ${p.price.toFixed(2).replace('.', ',')}!`;
   if (navigator.share) {
-    navigator.share({ title: p.name + ' — BianaStore', text: `Olha que lindo: ${p.name} por R$ ${p.price},00!`, url: location.href });
+    navigator.share({ title: p.name + ' — BianaStore', text: shareText, url: shareUrl });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareUrl).then(() => showToast('Link copiado!'));
   } else {
-    showToast('Link copiado!');
+    showToast('Link: ' + shareUrl);
   }
 }
 
 // ─────────────────────────────────────────────────────────
 // SHOP
 // ─────────────────────────────────────────────────────────
+let shopSearchQuery = '';
+let shopSortBy = 'relevance';
+
+function setShopSearch(value) {
+  shopSearchQuery = value;
+  renderShop();
+}
+
+function setShopSort(value) {
+  shopSortBy = value;
+  renderShop();
+}
+
 function renderShop() {
   // Categories
   const chips = document.getElementById('categoryChips');
@@ -248,7 +274,21 @@ function renderShop() {
   `).join('');
   // Products
   const grid = document.getElementById('productsGrid');
-  const filtered = activeCategory === 'Todos' ? PRODUCTS : PRODUCTS.filter(p => p.cat === activeCategory);
+  let filtered = activeCategory === 'Todos' ? PRODUCTS : PRODUCTS.filter(p => p.cat === activeCategory);
+  const q = shopSearchQuery.trim().toLowerCase();
+  if (q) filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || (p.sub || '').toLowerCase().includes(q));
+  filtered = filtered.slice(); // don't sort the shared PRODUCTS array in place
+  if (shopSortBy === 'price-asc') filtered.sort((a, b) => a.price - b.price);
+  else if (shopSortBy === 'price-desc') filtered.sort((a, b) => b.price - a.price);
+  else if (shopSortBy === 'newest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="cart-empty" style="grid-column:1/-1">
+      <span class="material-symbols-outlined">search_off</span>
+      <h3>Nenhum produto encontrado</h3>
+      <p>${q ? `Não achamos nada pra "${escapeHtml(shopSearchQuery)}"` : 'Tente outra categoria'}</p>
+    </div>`;
+    return;
+  }
   grid.innerHTML = filtered.map(p => `
     <div class="product-card" onclick="navigateTo('product', PRODUCTS.find(x=>x.id==${p.id}))">
       <div class="product-card-img-wrap">
@@ -761,6 +801,10 @@ function renderCheckout() {
   const content = document.getElementById('checkoutContent');
   const { total } = getCartTotals();
   const fmt = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+  // Fresh state every time the customer (re)enters checkout — a coupon or
+  // shipping estimate from a previous visit shouldn't silently carry over.
+  appliedCoupon = null;
+  shippingZoneCache = null;
   content.innerHTML = `
     <div style="padding:16px 16px 8px">
       <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:var(--on-background)">Finalizar Compra</h2>
@@ -773,7 +817,8 @@ function renderCheckout() {
       </div>
       <div class="checkout-field">
         <label>CEP</label>
-        <input type="text" id="addr-cep" placeholder="00000-000" inputmode="numeric" maxlength="9"/>
+        <input type="text" id="addr-cep" placeholder="00000-000" inputmode="numeric" maxlength="9" oninput="onCepInput(this.value)"/>
+        <span id="cepStatus" style="font-size:12px;color:var(--on-surface-variant)"></span>
       </div>
       <div class="checkout-field">
         <label>Rua / Avenida</label>
@@ -800,7 +845,7 @@ function renderCheckout() {
         </div>
         <div class="checkout-field" style="flex:1">
           <label>Estado</label>
-          <input type="text" id="addr-state" placeholder="SP" maxlength="2"/>
+          <input type="text" id="addr-state" placeholder="SP" maxlength="2" oninput="this.value=this.value.toUpperCase();updateShippingEstimate()"/>
         </div>
       </div>
     </div>
@@ -852,41 +897,186 @@ function renderCheckout() {
 
     <div class="checkout-section">
       <div class="checkout-section-header">
+        <span class="material-symbols-outlined">sell</span>
+        <span class="checkout-section-title">Cupom de Desconto</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="couponInput" placeholder="Digite o código" style="flex:1;padding:10px 12px;border:1px solid var(--outline-variant);border-radius:8px;text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();applyCoupon();}"/>
+        <button class="btn-coupon-apply" id="couponApplyBtn" onclick="applyCoupon()" style="padding:0 18px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer">Aplicar</button>
+      </div>
+      <div id="couponMsg" style="font-size:13px;margin-top:6px"></div>
+    </div>
+
+    <div class="checkout-section">
+      <div class="checkout-section-header">
         <span class="material-symbols-outlined">local_shipping</span>
         <span class="checkout-section-title">Opção de Entrega</span>
       </div>
-      <label class="payment-option">
-        <input type="radio" name="shipping" value="express" checked/>
-        <span class="material-symbols-outlined">bolt</span>
-        <span class="payment-option-label">Expresso — Amanhã</span>
-        <span style="font-size:13px;font-weight:700;color:var(--primary)">R$ 14,90</span>
-      </label>
-      <label class="payment-option">
-        <input type="radio" name="shipping" value="standard"/>
-        <span class="material-symbols-outlined">local_shipping</span>
-        <span class="payment-option-label">Padrão — 3-5 dias</span>
-        <span style="font-size:13px;font-weight:700;color:#1A7B45">${total >= 299 ? 'Grátis' : 'R$ 9,90'}</span>
-      </label>
+      <div id="shippingOptions"></div>
     </div>
 
     <div style="height:120px"></div>
 
     <div class="checkout-total-bar">
-      <div class="checkout-total-row">
-        <span class="checkout-total-label">Total do pedido</span>
-        <span class="checkout-total-val">${fmt(total)}</span>
-      </div>
+      <div id="checkoutTotalBreakdown"></div>
       <button class="checkout-confirm-btn" id="checkoutConfirmBtn" onclick="placeOrder()">
         <span class="material-symbols-outlined">lock</span>
         Confirmar Pedido
       </button>
     </div>
   `;
+  renderShippingOptions();
+  renderCheckoutTotals();
 }
 
 let lastOrder = null;
 let appConfig = { efiAccountId: null, efiSandbox: false, paymentsEnabled: false };
 let pixPollTimer = null;
+let cepLookupTimer = null;
+
+// Auto-fills street/neighborhood/city/state from a CEP via ViaCEP (free,
+// no key needed) so the customer doesn't have to type their whole address by
+// hand every time — only the house number/complement stay manual. Debounced
+// so it doesn't fire a request on every keystroke.
+function onCepInput(raw) {
+  clearTimeout(cepLookupTimer);
+  const cep = raw.replace(/\D/g, '');
+  const status = document.getElementById('cepStatus');
+  if (cep.length !== 8) { if (status) status.textContent = ''; return; }
+  if (status) status.textContent = 'Buscando endereço…';
+  cepLookupTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data.erro) { if (status) status.textContent = 'CEP não encontrado — preencha manualmente'; return; }
+      const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+      set('addr-street', data.logradouro);
+      set('addr-neighborhood', data.bairro);
+      set('addr-city', data.localidade);
+      set('addr-state', data.uf);
+      if (status) status.textContent = '✅ Endereço encontrado';
+      updateShippingEstimate();
+    } catch {
+      if (status) status.textContent = 'Não foi possível buscar o CEP — preencha manualmente';
+    }
+  }, 500);
+}
+
+// ─────────────────────────────────────────────────────────
+// SHIPPING (real, per-destination-state — see server/lib/shipping.js) and
+// COUPONS. Both render into their own containers inside the checkout screen
+// (#shippingOptions / #checkoutTotalBreakdown) so applying a coupon or
+// resolving a CEP never has to re-render the whole checkout form (which
+// would blow away whatever the customer already typed).
+// ─────────────────────────────────────────────────────────
+let appliedCoupon = null; // {code, discount} once applied, else null
+let shippingZoneCache = null; // {zoneName, standardCost, standardDays, expressCost, expressDays} once resolved
+
+// Shown before the destination state is known — matches what this screen
+// hardcoded before real shipping zones existed, so checkout never looks
+// broken while waiting on a CEP lookup.
+const SHIPPING_FALLBACK = { standardCost: 9.9, standardDays: 5, expressCost: 14.9, expressDays: 2 };
+
+function currentShippingDisplay() {
+  if (shippingZoneCache) return shippingZoneCache;
+  const { total } = getCartTotals();
+  return {
+    zoneName: null,
+    standardCost: total >= 299 ? 0 : SHIPPING_FALLBACK.standardCost,
+    standardDays: SHIPPING_FALLBACK.standardDays,
+    expressCost: SHIPPING_FALLBACK.expressCost,
+    expressDays: SHIPPING_FALLBACK.expressDays,
+  };
+}
+
+async function updateShippingEstimate() {
+  const state = document.getElementById('addr-state')?.value?.trim().toUpperCase();
+  if (!state || state.length !== 2) return;
+  const { sub } = getCartTotals();
+  try {
+    shippingZoneCache = await api(`/api/shipping/estimate?state=${state}&subtotal=${sub}`);
+    renderShippingOptions();
+    renderCheckoutTotals();
+  } catch {
+    // Silent — the order itself recomputes shipping server-side regardless,
+    // so a failed estimate here just means the fallback numbers stay shown.
+  }
+}
+
+function renderShippingOptions() {
+  const el = document.getElementById('shippingOptions');
+  if (!el) return;
+  const selected = document.querySelector('input[name="shipping"]:checked')?.value || 'express';
+  const s = currentShippingDisplay();
+  const fmt = v => v <= 0 ? 'Grátis' : `R$ ${v.toFixed(2).replace('.', ',')}`;
+  el.innerHTML = `
+    <label class="payment-option">
+      <input type="radio" name="shipping" value="express" ${selected === 'express' ? 'checked' : ''} onchange="renderCheckoutTotals()"/>
+      <span class="material-symbols-outlined">bolt</span>
+      <span class="payment-option-label">Expresso — ${s.expressDays <= 1 ? 'Amanhã' : `${s.expressDays} dias úteis`}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--primary)">${fmt(s.expressCost)}</span>
+    </label>
+    <label class="payment-option">
+      <input type="radio" name="shipping" value="standard" ${selected === 'standard' ? 'checked' : ''} onchange="renderCheckoutTotals()"/>
+      <span class="material-symbols-outlined">local_shipping</span>
+      <span class="payment-option-label">Padrão — ${s.standardDays} dias úteis</span>
+      <span style="font-size:13px;font-weight:700;color:#1A7B45">${fmt(s.standardCost)}</span>
+    </label>
+    ${s.zoneName ? `<div style="font-size:12px;color:var(--on-surface-variant);margin-top:4px">📍 Frete calculado para: ${escapeHtml(s.zoneName)}</div>` : ''}
+  `;
+}
+
+function renderCheckoutTotals() {
+  const el = document.getElementById('checkoutTotalBreakdown');
+  if (!el) return;
+  const { sub, discount } = getCartTotals();
+  const method = document.querySelector('input[name="shipping"]:checked')?.value || 'express';
+  const s = currentShippingDisplay();
+  const shippingCost = method === 'express' ? s.expressCost : s.standardCost;
+  const couponDiscount = appliedCoupon?.discount || 0;
+  const total = Math.max(0, sub + shippingCost - couponDiscount);
+  const fmt = v => `R$ ${v.toFixed(2).replace('.', ',')}`;
+  el.innerHTML = `
+    <div class="checkout-total-row"><span class="checkout-total-label">Subtotal</span><span>${fmt(sub)}</span></div>
+    ${discount > 0 ? `<div class="checkout-total-row"><span class="checkout-total-label">Você economiza</span><span style="color:var(--primary)">− ${fmt(discount)}</span></div>` : ''}
+    <div class="checkout-total-row"><span class="checkout-total-label">Frete</span><span>${shippingCost <= 0 ? 'Grátis' : fmt(shippingCost)}</span></div>
+    ${couponDiscount > 0 ? `<div class="checkout-total-row"><span class="checkout-total-label">Cupom ${escapeHtml(appliedCoupon.code)}</span><span style="color:var(--primary)">− ${fmt(couponDiscount)}</span></div>` : ''}
+    <div class="checkout-total-row"><span class="checkout-total-label">Total do pedido</span><span class="checkout-total-val">${fmt(total)}</span></div>
+  `;
+}
+
+async function applyCoupon() {
+  const input = document.getElementById('couponInput');
+  const msg = document.getElementById('couponMsg');
+  const code = input.value.trim().toUpperCase();
+  if (!code) return;
+  const { sub } = getCartTotals();
+  try {
+    const result = await api(`/api/coupons/${encodeURIComponent(code)}/validate?subtotal=${sub}`);
+    appliedCoupon = { code: result.code, discount: result.discount };
+    msg.innerHTML = `✅ Cupom <b>${escapeHtml(result.code)}</b> aplicado! <a href="javascript:void(0)" onclick="removeCoupon()" style="color:inherit;text-decoration:underline">Remover</a>`;
+    msg.style.color = 'var(--success, #1a7b45)';
+    input.disabled = true;
+    document.getElementById('couponApplyBtn').disabled = true;
+    renderCheckoutTotals();
+  } catch (err) {
+    appliedCoupon = null;
+    msg.textContent = '❌ ' + err.message;
+    msg.style.color = 'var(--error)';
+    renderCheckoutTotals();
+  }
+}
+
+function removeCoupon() {
+  appliedCoupon = null;
+  const input = document.getElementById('couponInput');
+  if (input) { input.value = ''; input.disabled = false; }
+  const btn = document.getElementById('couponApplyBtn');
+  if (btn) btn.disabled = false;
+  const msg = document.getElementById('couponMsg');
+  if (msg) msg.textContent = '';
+  renderCheckoutTotals();
+}
 
 function onPaymentMethodChange() {
   const isCredit = document.querySelector('input[name="payment"]:checked')?.value === 'credit';
@@ -949,7 +1139,7 @@ async function placeOrder() {
 
   btn.disabled = true;
   try {
-    let payload = { shippingAddress, paymentMethod, shippingMethod };
+    let payload = { shippingAddress, paymentMethod, shippingMethod, couponCode: appliedCoupon?.code || undefined };
 
     if (paymentMethod === 'credit') {
       const customer = { name: val('cust-name'), cpf: val('cust-cpf'), email: val('cust-email'), phone: val('cust-phone') };
@@ -1062,7 +1252,7 @@ function renderConfirmation() {
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--on-surface-variant)">
             <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary)">local_shipping</span>
-            Entrega prevista: <strong style="color:var(--on-surface)">amanhã</strong>
+            Entrega prevista: <strong style="color:var(--on-surface)">${lastOrder?.shippingMethod === 'express' ? 'em 1-3 dias úteis' : 'conforme prazo informado no checkout'}</strong>
           </div>
           <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--on-surface-variant)">
             <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary)">notifications</span>
@@ -1603,4 +1793,13 @@ async function loadInitialData() {
   const urlParams = new URLSearchParams(location.search);
   const startView = urlParams.get('view');
   if (startView) navigateTo(startView);
+  // Deep link to a specific product (?product=ID) — needs PRODUCTS loaded
+  // first, so it's handled here rather than in the earlier DOMContentLoaded
+  // handler. This is what makes a shared product link (see handleShare())
+  // actually open that product instead of just the home feed.
+  const productParam = urlParams.get('product');
+  if (productParam) {
+    const p = PRODUCTS.find(x => x.id == productParam);
+    if (p) navigateTo('product', p);
+  }
 })();

@@ -8,6 +8,23 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="BianaStore"/>
 <meta name="description" content="Moda feminina com estilo — shop video feed"/>
+
+<!-- Open Graph / Twitter Card — so a link to the store shared on WhatsApp/
+     Instagram shows a real preview card instead of a bare link. Static (this
+     is a client-rendered SPA, no per-product server-side rendering), so
+     every shared link previews the same store-level card regardless of
+     which product it deep-links to (see ?product=ID handling in app.js). -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="BianaStore"/>
+<meta property="og:title" content="BianaStore — Moda feminina"/>
+<meta property="og:description" content="Vestidos, blazers, bolsas e mais — descubra looks novos toda semana."/>
+<meta property="og:image" content="https://bianastore.shop/icons/icon-512.png"/>
+<meta property="og:url" content="https://bianastore.shop"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="BianaStore — Moda feminina"/>
+<meta name="twitter:description" content="Vestidos, blazers, bolsas e mais — descubra looks novos toda semana."/>
+<meta name="twitter:image" content="https://bianastore.shop/icons/icon-512.png"/>
+
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-180.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-rounded.png"/>
@@ -406,6 +423,17 @@ a { text-decoration: none; color: inherit; }
   font-size: 24px; font-weight: 700;
   color: var(--on-background);
   margin-bottom: 12px;
+}
+.shop-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.shop-search-input {
+  flex: 1; padding: 10px 14px; border-radius: 99px;
+  border: 1px solid var(--outline-variant); background: var(--surface-container-low);
+  font-size: 14px; font-family: 'Hanken Grotesk', sans-serif; outline: none;
+}
+.shop-sort-select {
+  padding: 10px 12px; border-radius: 99px;
+  border: 1px solid var(--outline-variant); background: var(--surface-container-low);
+  font-size: 13px; font-family: 'Hanken Grotesk', sans-serif; color: var(--on-surface-variant);
 }
 .category-chips {
   display: flex;
@@ -1300,6 +1328,15 @@ a { text-decoration: none; color: inherit; }
     <div class="shop-screen scrollbar-hide">
       <div class="shop-header">
         <h2 class="shop-title">Explorar</h2>
+        <div class="shop-search-row">
+          <input type="text" class="shop-search-input" id="shopSearchInput" placeholder="Buscar produto…" oninput="setShopSearch(this.value)"/>
+          <select class="shop-sort-select" id="shopSortSelect" onchange="setShopSort(this.value)">
+            <option value="relevance">Relevância</option>
+            <option value="price-asc">Menor preço</option>
+            <option value="price-desc">Maior preço</option>
+            <option value="newest">Mais recentes</option>
+          </select>
+        </div>
         <div class="category-chips" id="categoryChips"></div>
       </div>
       <div class="products-grid" id="productsGrid"></div>
@@ -1416,6 +1453,6 @@ a { text-decoration: none; color: inherit; }
 
 </div>
 
-<script src="app.js?v=10" defer></script>
+<script src="app.js?v=11" defer></script>
 </body>
 </html>

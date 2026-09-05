@@ -34,11 +34,14 @@ function escapeHtml(str) {
 
 function renderNav(active) {
   const items = [
+    { href: '/admin/dashboard.html', label: 'Dashboard', key: 'dashboard' },
     { href: '/admin/index.html', label: 'Produtos', key: 'products' },
     { href: '/admin/inventory.html', label: 'Estoque', key: 'inventory' },
     { href: '/admin/categories.html', label: 'Categorias', key: 'categories' },
     { href: '/admin/feed.html', label: 'Feed', key: 'feed' },
     { href: '/admin/orders.html', label: 'Pedidos', key: 'orders' },
+    { href: '/admin/coupons.html', label: 'Cupons', key: 'coupons' },
+    { href: '/admin/shipping.html', label: 'Frete', key: 'shipping' },
     { href: '/admin/customers.html', label: 'Clientes', key: 'customers' },
   ];
   return items.map((i) => `<a href="${i.href}" class="${i.key === active ? 'active' : ''}">${i.label}</a>`).join('');

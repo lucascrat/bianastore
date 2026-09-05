@@ -272,6 +272,148 @@ router.patch('/inventory/:variantId', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ---- Shipping zones ----
+router.get('/shipping-zones', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM shipping_zones ORDER BY sort_order ASC');
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+router.post('/shipping-zones', async (req, res, next) => {
+  try {
+    const { name, states, standardCost, standardDays, expressCost, expressDays, sortOrder } = req.body;
+    if (!name || !Array.isArray(states) || !states.length) {
+      return res.status(400).json({ error: 'name and at least one state are required' });
+    }
+    const { rows } = await pool.query(
+      `INSERT INTO shipping_zones (name, states, standard_cost, standard_days, express_cost, express_days, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [name, JSON.stringify(states.map((s) => s.toUpperCase())), standardCost || 0, standardDays || 5, expressCost || 0, expressDays || 2, sortOrder || 0]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+router.put('/shipping-zones/:id', async (req, res, next) => {
+  try {
+    const { name, states, standardCost, standardDays, expressCost, expressDays, sortOrder } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE shipping_zones SET name=$1, states=$2, standard_cost=$3, standard_days=$4, express_cost=$5, express_days=$6, sort_order=$7, updated_at=now()
+       WHERE id=$8 RETURNING *`,
+      [name, JSON.stringify((states || []).map((s) => s.toUpperCase())), standardCost || 0, standardDays || 5, expressCost || 0, expressDays || 2, sortOrder || 0, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Zone not found' });
+    res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+router.delete('/shipping-zones/:id', async (req, res, next) => {
+  try {
+    await pool.query('DELETE FROM shipping_zones WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---- Coupons ----
+router.get('/coupons', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM coupons ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+router.post('/coupons', async (req, res, next) => {
+  try {
+    const { code, discountType, discountValue, minOrderValue, maxUses, active, expiresAt } = req.body;
+    if (!code || !discountType || discountValue === undefined) {
+      return res.status(400).json({ error: 'code, discountType and discountValue are required' });
+    }
+    const { rows } = await pool.query(
+      `INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, active, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [code.toUpperCase().trim(), discountType, discountValue, minOrderValue || 0, maxUses || null, active !== false, expiresAt || null]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Já existe um cupom com esse código' });
+    next(err);
+  }
+});
+
+router.put('/coupons/:code', async (req, res, next) => {
+  try {
+    const { discountType, discountValue, minOrderValue, maxUses, active, expiresAt } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE coupons SET discount_type=$1, discount_value=$2, min_order_value=$3, max_uses=$4, active=$5, expires_at=$6
+       WHERE code=$7 RETURNING *`,
+      [discountType, discountValue, minOrderValue || 0, maxUses || null, active !== false, expiresAt || null, req.params.code.toUpperCase()]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Coupon not found' });
+    res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+router.delete('/coupons/:code', async (req, res, next) => {
+  try {
+    await pool.query('DELETE FROM coupons WHERE code=$1', [req.params.code.toUpperCase()]);
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---- Dashboard ----
+router.get('/dashboard', async (req, res, next) => {
+  try {
+    const [revenue, ordersByStatus, topProducts, lowStock, recentOrders] = await Promise.all([
+      pool.query(`
+        SELECT
+          COALESCE(SUM(total) FILTER (WHERE payment_status='paid' AND created_at >= date_trunc('day', now())), 0) AS today,
+          COALESCE(SUM(total) FILTER (WHERE payment_status='paid' AND created_at >= date_trunc('week', now())), 0) AS week,
+          COALESCE(SUM(total) FILTER (WHERE payment_status='paid' AND created_at >= date_trunc('month', now())), 0) AS month,
+          COALESCE(SUM(total) FILTER (WHERE payment_status='paid'), 0) AS all_time,
+          COUNT(*) FILTER (WHERE payment_status='paid') AS paid_orders_count
+        FROM orders
+      `),
+      pool.query(`SELECT status, COUNT(*)::int AS count FROM orders GROUP BY status`),
+      pool.query(`
+        SELECT oi.product_id, oi.product_name_snapshot AS name, oi.product_image_snapshot AS img,
+          SUM(oi.qty)::int AS units_sold, SUM(oi.qty * oi.unit_price) AS revenue
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.payment_status = 'paid'
+        GROUP BY oi.product_id, oi.product_name_snapshot, oi.product_image_snapshot
+        ORDER BY units_sold DESC
+        LIMIT 5
+      `),
+      pool.query(`
+        SELECT pv.id, pv.color, pv.size, pv.stock_qty, p.name AS product_name
+        FROM product_variants pv JOIN products p ON p.id = pv.product_id
+        WHERE pv.stock_qty <= 5 AND p.is_active = true
+        ORDER BY pv.stock_qty ASC LIMIT 10
+      `),
+      pool.query(`
+        SELECT id, order_number, status, status_label, payment_status, total, created_at
+        FROM orders ORDER BY created_at DESC LIMIT 8
+      `),
+    ]);
+    const statusCounts = { processing: 0, shipping: 0, delivered: 0, cancelled: 0 };
+    ordersByStatus.rows.forEach((r) => { statusCounts[r.status] = r.count; });
+    res.json({
+      revenue: {
+        today: Number(revenue.rows[0].today),
+        week: Number(revenue.rows[0].week),
+        month: Number(revenue.rows[0].month),
+        allTime: Number(revenue.rows[0].all_time),
+        paidOrdersCount: Number(revenue.rows[0].paid_orders_count),
+      },
+      ordersByStatus: statusCounts,
+      topProducts: topProducts.rows.map((r) => ({ productId: r.product_id, name: r.name, img: r.img, unitsSold: r.units_sold, revenue: Number(r.revenue) })),
+      lowStock: lowStock.rows.map((r) => ({ id: r.id, productName: r.product_name, color: r.color, size: r.size, stock: r.stock_qty })),
+      recentOrders: recentOrders.rows.map((r) => ({ id: r.id, orderNumber: r.order_number, status: r.status, statusLabel: r.status_label, paymentStatus: r.payment_status, total: Number(r.total), createdAt: r.created_at })),
+    });
+  } catch (err) { next(err); }
+});
+
 // ---- Categories ----
 router.get('/categories', async (req, res, next) => {
   try {

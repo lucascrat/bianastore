@@ -4,15 +4,11 @@ const pool = require('../db/pool');
 const { requireUserId } = require('../middleware/user');
 const efi = require('../lib/efi');
 const push = require('../lib/push');
+const { computeShippingCost } = require('../lib/shipping');
+const { getCouponOrThrow, assertCouponUsable, computeCouponDiscount } = require('../lib/coupons');
 
 const router = express.Router();
 router.use(requireUserId);
-
-function computeShippingCost(method, subtotal) {
-  if (method === 'express') return 14.9;
-  // standard
-  return subtotal >= 299 ? 0 : 9.9;
-}
 
 function generateOrderNumber() {
   return 'BS-' + Math.floor(20000 + Math.random() * 79999);
@@ -56,7 +52,25 @@ async function assertStockAvailable(cartRows, client) {
   }
 }
 
-async function persistOrder({ client, userId, shippingAddress, paymentMethod, shippingMethod, cartRows, subtotal, discount, shippingCost, total, paymentStatus, paymentProviderId, pixQrCode, installments }) {
+async function persistOrder({ client, userId, shippingAddress, paymentMethod, shippingMethod, cartRows, subtotal, discount, shippingCost, total, paymentStatus, paymentProviderId, pixQrCode, installments, couponCode, couponDiscount }) {
+  // Re-validate the coupon one last time inside the transaction and claim a
+  // use atomically (WHERE uses_count < max_uses in the same UPDATE) — closes
+  // the race where two customers redeem the last use of a limited coupon at
+  // the same instant. If it's gone by the time we get here, the whole order
+  // rolls back rather than silently honoring a stale discount.
+  if (couponCode) {
+    const { rows } = await client.query(
+      `UPDATE coupons SET uses_count = uses_count + 1
+       WHERE code = $1 AND active = true AND (max_uses IS NULL OR uses_count < max_uses)
+       RETURNING code`,
+      [couponCode]
+    );
+    if (!rows.length) {
+      throw Object.assign(new Error('Esse cupom acabou de deixar de ser válido. Remova-o e tente novamente.'), { status: 409 });
+    }
+  }
+
+
   // Final stock check + decrement, locked with FOR UPDATE so two near-simultaneous
   // orders for the last unit of the same variant can't both succeed. Stock is
   // decremented at order creation (even for a still-"pending" Pix order) rather
@@ -91,9 +105,9 @@ async function persistOrder({ client, userId, shippingAddress, paymentMethod, sh
   }
 
   const { rows: orderRows } = await client.query(
-    `INSERT INTO orders (order_number, user_id, status, status_label, subtotal, discount, shipping_cost, total, shipping_address, payment_method, shipping_method, payment_status, payment_provider_id, pix_qr_code, installments)
-     VALUES ($1,$2,'processing','Processando',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-    [orderNumber, userId, subtotal, discount, shippingCost, total, JSON.stringify(shippingAddress), paymentMethod, shippingMethod, paymentStatus, paymentProviderId || null, pixQrCode || null, installments || 1]
+    `INSERT INTO orders (order_number, user_id, status, status_label, subtotal, discount, shipping_cost, total, shipping_address, payment_method, shipping_method, payment_status, payment_provider_id, pix_qr_code, installments, coupon_code, coupon_discount)
+     VALUES ($1,$2,'processing','Processando',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+    [orderNumber, userId, subtotal, discount, shippingCost, total, JSON.stringify(shippingAddress), paymentMethod, shippingMethod, paymentStatus, paymentProviderId || null, pixQrCode || null, installments || 1, couponCode || null, couponDiscount || 0]
   );
   const order = orderRows[0];
 
@@ -117,7 +131,7 @@ async function persistOrder({ client, userId, shippingAddress, paymentMethod, sh
 
 router.post('/', async (req, res, next) => {
   try {
-    const { shippingAddress, paymentMethod, shippingMethod } = req.body;
+    const { shippingAddress, paymentMethod, shippingMethod, couponCode } = req.body;
     if (!shippingAddress || !paymentMethod || !shippingMethod) {
       return res.status(400).json({ error: 'shippingAddress, paymentMethod and shippingMethod are required' });
     }
@@ -137,11 +151,28 @@ router.post('/', async (req, res, next) => {
       return res.status(err.status || 409).json({ error: err.message });
     }
 
-    const shippingCost = computeShippingCost(shippingMethod, subtotal);
+    // Pre-check (mirrors the public preview endpoint) so a bad/expired coupon
+    // never reaches Efí at all. persistOrder() re-checks + claims the use
+    // atomically right before the order is written — this one is just to
+    // fail fast without bothering the payment gateway.
+    let couponDiscount = 0;
+    let couponCodeApplied = null;
+    if (couponCode) {
+      try {
+        const coupon = await getCouponOrThrow(pool, couponCode);
+        assertCouponUsable(coupon, subtotal);
+        couponDiscount = computeCouponDiscount(coupon, subtotal);
+        couponCodeApplied = coupon.code;
+      } catch (err) {
+        return res.status(err.status || 400).json({ error: err.message });
+      }
+    }
+
+    const shippingCost = await computeShippingCost(shippingMethod, subtotal, shippingAddress.state);
 
     if (paymentMethod === 'pix') {
       const pixDiscount = subtotal * 0.05;
-      const total = subtotal - pixDiscount + shippingCost;
+      const total = Math.max(0, subtotal - pixDiscount - couponDiscount + shippingCost);
       // Reserve a candidate order number up front so the Pix txid (derived
       // from it) is stable even though the order row doesn't exist yet.
       const tentativeOrderNumber = generateOrderNumber();
@@ -165,6 +196,7 @@ router.post('/', async (req, res, next) => {
           client, userId: req.userId, shippingAddress, paymentMethod, shippingMethod, cartRows,
           subtotal, discount: discount + pixDiscount, shippingCost, total,
           paymentStatus: 'pending', paymentProviderId: charge.txid, pixQrCode: charge.pixCopiaECola, installments: 1,
+          couponCode: couponCodeApplied, couponDiscount,
         });
         await client.query('COMMIT');
         res.status(201).json(await serializeOrder(order.id));
@@ -183,7 +215,7 @@ router.post('/', async (req, res, next) => {
     if (!paymentToken || !installments || !customer?.name || !customer?.cpf || !customer?.email || !customer?.phone) {
       return res.status(400).json({ error: 'Dados do cartão/cliente incompletos' });
     }
-    const totalCents = Math.round((subtotal + shippingCost) * 100); // no pix discount for card
+    const totalCents = Math.max(0, Math.round((subtotal + shippingCost - couponDiscount) * 100)); // no pix discount for card
 
     let chargeResult;
     try {
@@ -210,6 +242,10 @@ router.post('/', async (req, res, next) => {
             neighborhood: shippingAddress.neighborhood, zipcode: (shippingAddress.cep || '').replace(/\D/g, ''),
             city: shippingAddress.city, state: shippingAddress.state,
           },
+          // Efí applies this on top of the items total — lets a coupon
+          // discount a card payment without having to fake a negative-value
+          // item. Value is in cents, like every other money field Efí takes here.
+          ...(couponDiscount > 0 ? { discount: { type: 'currency', value: Math.round(couponDiscount * 100) } } : {}),
         },
       });
     } catch (err) {
@@ -231,6 +267,7 @@ router.post('/', async (req, res, next) => {
         client, userId: req.userId, shippingAddress, paymentMethod, shippingMethod, cartRows,
         subtotal, discount, shippingCost, total: finalTotal,
         paymentStatus: 'paid', paymentProviderId: String(chargeData.charge_id || ''), pixQrCode: null, installments,
+        couponCode: couponCodeApplied, couponDiscount,
       });
       await client.query('COMMIT');
       res.status(201).json(await serializeOrder(order.id));
@@ -338,6 +375,8 @@ async function serializeOrder(orderId, userId) {
     subtotal: Number(order.subtotal),
     discount: Number(order.discount),
     shippingCost: Number(order.shipping_cost),
+    couponCode: order.coupon_code,
+    couponDiscount: Number(order.coupon_discount || 0),
     total: Number(order.total),
     shippingAddress: order.shipping_address,
     paymentMethod: order.payment_method,

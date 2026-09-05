@@ -138,10 +138,28 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_provider_id TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS pix_qr_code TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS installments INT NOT NULL DEFAULT 1;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_discount NUMERIC(10,2) NOT NULL DEFAULT 0;
 DO $$ BEGIN
   ALTER TABLE orders ADD CONSTRAINT orders_payment_status_check CHECK (payment_status IN ('pending','paid','failed','refunded'));
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Discount codes. discount_type 'percent' (discount_value 0-100) or 'fixed'
+-- (a flat R$ amount). max_uses NULL = unlimited. uses_count is incremented
+-- inside the same transaction that creates an order (see persistOrder in
+-- orders.js), so it can never overcount past max_uses under concurrent use.
+CREATE TABLE IF NOT EXISTS coupons (
+  code TEXT PRIMARY KEY,
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percent','fixed')),
+  discount_value NUMERIC(10,2) NOT NULL,
+  min_order_value NUMERIC(10,2) NOT NULL DEFAULT 0,
+  max_uses INT,
+  uses_count INT NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,
@@ -154,6 +172,34 @@ CREATE TABLE IF NOT EXISTS order_items (
   unit_price NUMERIC(10,2) NOT NULL
 );
 ALTER TABLE order_items ADD COLUMN IF NOT EXISTS color TEXT NOT NULL DEFAULT '';
+
+-- Real shipping by destination region instead of one flat number regardless
+-- of distance. `states` is a JSONB array of UF codes (e.g. ["SP","RJ"]) —
+-- computeShippingCost() in orders.js looks up the zone containing the
+-- customer's state. Admin-editable (see /admin/shipping.html); the defaults
+-- below are just a sensible starting point, not tuned to any specific
+-- carrier contract.
+CREATE TABLE IF NOT EXISTS shipping_zones (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  states JSONB NOT NULL DEFAULT '[]',
+  standard_cost NUMERIC(10,2) NOT NULL DEFAULT 0,
+  standard_days INT NOT NULL DEFAULT 5,
+  express_cost NUMERIC(10,2) NOT NULL DEFAULT 0,
+  express_days INT NOT NULL DEFAULT 2,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO shipping_zones (name, states, standard_cost, standard_days, express_cost, express_days, sort_order)
+SELECT * FROM (VALUES
+  ('Sudeste', '["ES","MG","RJ","SP"]'::jsonb, 9.90, 3, 19.90, 1, 0),
+  ('Sul', '["PR","RS","SC"]'::jsonb, 14.90, 5, 24.90, 2, 1),
+  ('Centro-Oeste', '["DF","GO","MT","MS"]'::jsonb, 16.90, 6, 27.90, 3, 2),
+  ('Nordeste', '["AL","BA","CE","MA","PB","PE","PI","RN","SE"]'::jsonb, 19.90, 8, 32.90, 4, 3),
+  ('Norte', '["AC","AP","AM","PA","RO","RR","TO"]'::jsonb, 24.90, 12, 39.90, 6, 4)
+) AS v(name, states, standard_cost, standard_days, express_cost, express_days, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM shipping_zones);
 
 CREATE TABLE IF NOT EXISTS notifications (
   id SERIAL PRIMARY KEY,

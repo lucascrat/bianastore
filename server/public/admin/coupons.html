@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Cupons</title>
+<link rel="stylesheet" href="admin.css"/>
+<style>
+  .coupon-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px; }
+  .coupon-form .field { margin-bottom:0; }
+  .coupon-form input, .coupon-form select { width:120px; }
+  #new-code { width:140px; text-transform:uppercase; }
+  table input, table select { padding:5px 7px; border:1px solid var(--outline); border-radius:6px; font-size:13px; width:90px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <h2>Cupons de desconto</h2>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px">Novo cupom</h3>
+    <div class="coupon-form">
+      <div class="field"><label>Código</label><input id="new-code" placeholder="BEMVINDA10"/></div>
+      <div class="field"><label>Tipo</label>
+        <select id="new-type"><option value="percent">% percentual</option><option value="fixed">R$ fixo</option></select>
+      </div>
+      <div class="field"><label>Valor</label><input id="new-value" type="number" step="0.01" placeholder="10"/></div>
+      <div class="field"><label>Pedido mínimo R$</label><input id="new-min" type="number" step="0.01" value="0"/></div>
+      <div class="field"><label>Máx. usos (vazio=∞)</label><input id="new-max" type="number" placeholder="100"/></div>
+      <div class="field"><label>Expira em</label><input id="new-expires" type="date"/></div>
+      <button class="btn" onclick="createCoupon()">Criar</button>
+    </div>
+    <div class="error-msg" id="createErr" style="display:none"></div>
+  </div>
+
+  <div class="card" style="padding:0">
+    <table>
+      <thead><tr><th>Código</th><th>Desconto</th><th>Mín. pedido</th><th>Usos</th><th>Expira</th><th>Ativo</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="7">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('coupons');
+let coupons = [];
+
+async function load() {
+  await requireAuth();
+  coupons = await api('/coupons');
+  render();
+}
+
+function render() {
+  const rows = document.getElementById('rows');
+  if (!coupons.length) { rows.innerHTML = '<tr><td colspan="7">Nenhum cupom criado ainda.</td></tr>'; return; }
+  rows.innerHTML = coupons.map((c) => `
+    <tr>
+      <td><b>${escapeHtml(c.code)}</b></td>
+      <td>${c.discount_type === 'percent' ? c.discount_value + '%' : fmtMoney(c.discount_value)}</td>
+      <td>${fmtMoney(c.min_order_value)}</td>
+      <td>${c.uses_count}${c.max_uses !== null ? ' / ' + c.max_uses : ''}</td>
+      <td>${c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" style="width:auto" ${c.active ? 'checked' : ''} onchange="toggleActive('${c.code}', this.checked)"/>
+        </label>
+      </td>
+      <td><button class="btn danger" onclick="deleteCoupon('${c.code}')">Excluir</button></td>
+    </tr>
+  `).join('');
+}
+
+async function createCoupon() {
+  const err = document.getElementById('createErr');
+  err.style.display = 'none';
+  const code = document.getElementById('new-code').value.trim().toUpperCase();
+  const discountValue = parseFloat(document.getElementById('new-value').value);
+  if (!code || !discountValue) { err.textContent = 'Informe o código e o valor do desconto.'; err.style.display = 'block'; return; }
+  const maxUsesRaw = document.getElementById('new-max').value;
+  const expiresRaw = document.getElementById('new-expires').value;
+  try {
+    await api('/coupons', {
+      method: 'POST',
+      body: JSON.stringify({
+        code,
+        discountType: document.getElementById('new-type').value,
+        discountValue,
+        minOrderValue: parseFloat(document.getElementById('new-min').value) || 0,
+        maxUses: maxUsesRaw ? parseInt(maxUsesRaw, 10) : null,
+        expiresAt: expiresRaw ? new Date(expiresRaw + 'T23:59:59').toISOString() : null,
+        active: true,
+      }),
+    });
+    document.getElementById('new-code').value = '';
+    document.getElementById('new-value').value = '';
+    document.getElementById('new-max').value = '';
+    document.getElementById('new-expires').value = '';
+    load();
+  } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+}
+
+async function toggleActive(code, active) {
+  const c = coupons.find((x) => x.code === code);
+  await api(`/coupons/${code}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      discountType: c.discount_type, discountValue: c.discount_value, minOrderValue: c.min_order_value,
+      maxUses: c.max_uses, expiresAt: c.expires_at, active,
+    }),
+  });
+  load();
+}
+
+async function deleteCoupon(code) {
+  if (!confirm(`Excluir o cupom ${code}?`)) return;
+  await api(`/coupons/${code}`, { method: 'DELETE' });
+  load();
+}
+
+load();
+</script>
+</body>
+</html>

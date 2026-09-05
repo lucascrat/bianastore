@@ -12,6 +12,8 @@ const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const socialRoutes = require('./routes/social');
 const pushRoutes = require('./routes/push');
+const shippingRoutes = require('./routes/shipping');
+const couponsRoutes = require('./routes/coupons');
 
 const app = express();
 app.set('trust proxy', 1); // behind Coolify/Traefik
@@ -60,6 +62,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/feed', socialRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/coupons', couponsRoutes);
 
 app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 

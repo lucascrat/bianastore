@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Dashboard</title>
+<link rel="stylesheet" href="admin.css"/>
+<style>
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat-card { background:var(--surface); border:1px solid var(--outline); border-radius:12px; padding:16px; }
+  .stat-card .label { font-size:12px; color:var(--on-surface-variant); text-transform:uppercase; letter-spacing:.04em; }
+  .stat-card .value { font-family:'Plus Jakarta Sans',sans-serif; font-size:24px; font-weight:800; color:var(--primary); margin-top:4px; }
+  .status-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .status-card { text-align:center; padding:14px; border-radius:12px; }
+  .status-card .value { font-size:22px; font-weight:800; font-family:'Plus Jakarta Sans',sans-serif; }
+  .status-card .label { font-size:12px; margin-top:2px; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:800px) { .cols { grid-template-columns:1fr; } }
+  .top-product-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--surface-container-high); }
+  .top-product-row:last-child { border-bottom:none; }
+  .top-product-row img { width:40px; height:40px; border-radius:8px; object-fit:cover; }
+  .top-product-row .name { flex:1; font-size:13px; font-weight:600; }
+  .top-product-row .units { font-size:12px; color:var(--on-surface-variant); }
+  .low-stock-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--surface-container-high); font-size:13px; }
+  .low-stock-row:last-child { border-bottom:none; }
+  .empty-hint { color:var(--on-surface-variant); font-size:13px; padding:12px 0; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <h2>Dashboard</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="label">Hoje</div><div class="value" id="rev-today">—</div></div>
+    <div class="stat-card"><div class="label">Esta semana</div><div class="value" id="rev-week">—</div></div>
+    <div class="stat-card"><div class="label">Este mês</div><div class="value" id="rev-month">—</div></div>
+    <div class="stat-card"><div class="label">Total (desde sempre)</div><div class="value" id="rev-all">—</div></div>
+  </div>
+
+  <div class="status-grid" id="statusGrid"></div>
+
+  <div class="cols">
+    <div class="card">
+      <h2 style="font-size:16px">🏆 Mais vendidos</h2>
+      <div id="topProducts"></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px">⚠️ Estoque baixo</h2>
+      <div id="lowStock"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:16px">Pedidos recentes</h2>
+    <table>
+      <thead><tr><th>Pedido</th><th>Data</th><th>Pagamento</th><th>Status</th><th>Total</th></tr></thead>
+      <tbody id="recentOrders"></tbody>
+    </table>
+  </div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('dashboard');
+
+const STATUS_LABELS = { processing: 'Processando', shipping: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
+const STATUS_COLORS = {
+  processing: { bg: '#fff3cd', fg: '#8a6d00' },
+  shipping: { bg: '#d4e8ff', fg: '#0b4a8f' },
+  delivered: { bg: '#d4f5df', fg: 'var(--success)' },
+  cancelled: { bg: '#ffdad6', fg: 'var(--error)' },
+};
+const PAYMENT_BADGE = { paid: '<span class="badge delivered">Pago</span>', pending: '<span class="badge processing">Aguardando</span>', failed: '<span class="badge cancelled">Falhou</span>', refunded: '<span class="badge inactive">Reembolsado</span>' };
+
+async function load() {
+  await requireAuth();
+  const d = await api('/dashboard');
+
+  document.getElementById('rev-today').textContent = fmtMoney(d.revenue.today);
+  document.getElementById('rev-week').textContent = fmtMoney(d.revenue.week);
+  document.getElementById('rev-month').textContent = fmtMoney(d.revenue.month);
+  document.getElementById('rev-all').textContent = fmtMoney(d.revenue.allTime);
+
+  document.getElementById('statusGrid').innerHTML = Object.entries(d.ordersByStatus).map(([status, count]) => {
+    const c = STATUS_COLORS[status] || { bg: '#eee', fg: '#777' };
+    return `<div class="status-card" style="background:${c.bg}"><div class="value" style="color:${c.fg}">${count}</div><div class="label" style="color:${c.fg}">${STATUS_LABELS[status] || status}</div></div>`;
+  }).join('');
+
+  const topEl = document.getElementById('topProducts');
+  topEl.innerHTML = d.topProducts.length
+    ? d.topProducts.map((p) => `
+        <div class="top-product-row">
+          ${p.img ? `<img src="${escapeHtml(p.img)}"/>` : ''}
+          <div class="name">${escapeHtml(p.name)}</div>
+          <div class="units">${p.unitsSold} vendidos<br>${fmtMoney(p.revenue)}</div>
+        </div>`).join('')
+    : '<div class="empty-hint">Nenhuma venda paga ainda.</div>';
+
+  const lowEl = document.getElementById('lowStock');
+  lowEl.innerHTML = d.lowStock.length
+    ? d.lowStock.map((v) => `
+        <div class="low-stock-row">
+          <span>${escapeHtml(v.productName)} ${v.color ? `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${escapeHtml(v.color)};border:1px solid var(--outline);vertical-align:middle"></span>` : ''} ${escapeHtml(v.size || '')}</span>
+          <b style="color:${v.stock <= 0 ? 'var(--error)' : '#8a6d00'}">${v.stock <= 0 ? 'Esgotado' : v.stock + ' un.'}</b>
+        </div>`).join('') + '<div style="margin-top:10px"><a class="btn secondary" href="/admin/inventory.html">Ver estoque completo →</a></div>'
+    : '<div class="empty-hint">Nenhuma variação com estoque baixo. 🎉</div>';
+
+  document.getElementById('recentOrders').innerHTML = d.recentOrders.length
+    ? d.recentOrders.map((o) => `
+        <tr>
+          <td><a href="/admin/order-detail.html?id=${o.id}">${escapeHtml(o.orderNumber)}</a></td>
+          <td>${new Date(o.createdAt).toLocaleDateString('pt-BR')}</td>
+          <td>${PAYMENT_BADGE[o.paymentStatus] || o.paymentStatus}</td>
+          <td><span class="badge ${o.status}">${escapeHtml(o.statusLabel)}</span></td>
+          <td>${fmtMoney(o.total)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="5">Nenhum pedido ainda.</td></tr>';
+}
+
+load();
+</script>
+</body>
+</html>
