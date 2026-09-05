@@ -35,6 +35,7 @@ function escapeHtml(str) {
 function renderNav(active) {
   const items = [
     { href: '/admin/index.html', label: 'Produtos', key: 'products' },
+    { href: '/admin/inventory.html', label: 'Estoque', key: 'inventory' },
     { href: '/admin/categories.html', label: 'Categorias', key: 'categories' },
     { href: '/admin/feed.html', label: 'Feed', key: 'feed' },
     { href: '/admin/orders.html', label: 'Pedidos', key: 'orders' },

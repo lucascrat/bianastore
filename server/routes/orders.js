@@ -20,7 +20,7 @@ function generateOrderNumber() {
 
 async function loadCartAndTotals(userId, client) {
   const { rows: cartRows } = await client.query(
-    `SELECT ci.product_id, ci.size, ci.qty, p.name, p.price, p.old_price,
+    `SELECT ci.product_id, ci.size, ci.color, ci.qty, p.name, p.price, p.old_price,
       (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS img
      FROM cart_items ci JOIN products p ON p.id = ci.product_id
      WHERE ci.user_id = $1`,
@@ -35,7 +35,54 @@ async function loadCartAndTotals(userId, client) {
   return { cartRows, subtotal, discount };
 }
 
+// Pre-check run BEFORE charging the customer (Efí Pix/card), so we never take
+// payment for something we can't actually fulfill. persistOrder() below does
+// a second, transactional check right before decrementing — that one is the
+// real race-condition guard (SELECT ... FOR UPDATE); this one just avoids
+// bothering Efí at all for the overwhelmingly common case of stale stock.
+async function assertStockAvailable(cartRows, client) {
+  for (const item of cartRows) {
+    const { rows } = await client.query(
+      'SELECT stock_qty FROM product_variants WHERE product_id=$1 AND color=$2 AND size=$3',
+      [item.product_id, item.color, item.size]
+    );
+    const available = rows[0]?.stock_qty ?? 0;
+    if (available < item.qty) {
+      throw Object.assign(
+        new Error(`Estoque insuficiente para "${item.name}" (tamanho ${item.size}). Disponível: ${available}.`),
+        { status: 409 }
+      );
+    }
+  }
+}
+
 async function persistOrder({ client, userId, shippingAddress, paymentMethod, shippingMethod, cartRows, subtotal, discount, shippingCost, total, paymentStatus, paymentProviderId, pixQrCode, installments }) {
+  // Final stock check + decrement, locked with FOR UPDATE so two near-simultaneous
+  // orders for the last unit of the same variant can't both succeed. Stock is
+  // decremented at order creation (even for a still-"pending" Pix order) rather
+  // than only on payment confirmation — a deliberate simplification: it matches
+  // the "reserved for you" language already used elsewhere in the app (see the
+  // quick-buy urgency sheet), at the cost of not auto-releasing stock if a Pix
+  // charge is abandoned. Acceptable at this store's scale; revisit if that
+  // becomes a real problem (e.g. a cron that releases stale pending orders).
+  for (const item of cartRows) {
+    const { rows } = await client.query(
+      'SELECT stock_qty FROM product_variants WHERE product_id=$1 AND color=$2 AND size=$3 FOR UPDATE',
+      [item.product_id, item.color, item.size]
+    );
+    const available = rows[0]?.stock_qty ?? 0;
+    if (available < item.qty) {
+      throw Object.assign(
+        new Error(`O estoque de "${item.name}" mudou enquanto você finalizava a compra e não é mais suficiente.`),
+        { status: 409 }
+      );
+    }
+    await client.query(
+      'UPDATE product_variants SET stock_qty = stock_qty - $1, updated_at = now() WHERE product_id=$2 AND color=$3 AND size=$4',
+      [item.qty, item.product_id, item.color, item.size]
+    );
+  }
+
   let orderNumber = generateOrderNumber();
   for (let attempt = 0; attempt < 5; attempt++) {
     const { rows } = await client.query('SELECT 1 FROM orders WHERE order_number=$1', [orderNumber]);
@@ -52,9 +99,9 @@ async function persistOrder({ client, userId, shippingAddress, paymentMethod, sh
 
   for (const item of cartRows) {
     await client.query(
-      `INSERT INTO order_items (order_id, product_id, product_name_snapshot, product_image_snapshot, size, qty, unit_price)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [order.id, item.product_id, item.name, item.img, item.size, item.qty, item.price]
+      `INSERT INTO order_items (order_id, product_id, product_name_snapshot, product_image_snapshot, size, color, qty, unit_price)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [order.id, item.product_id, item.name, item.img, item.size, item.color, item.qty, item.price]
     );
   }
 
@@ -83,6 +130,12 @@ router.post('/', async (req, res, next) => {
 
     const { cartRows, subtotal, discount } = await loadCartAndTotals(req.userId, pool);
     if (!cartRows.length) return res.status(400).json({ error: 'Cart is empty' });
+
+    try {
+      await assertStockAvailable(cartRows, pool);
+    } catch (err) {
+      return res.status(err.status || 409).json({ error: err.message });
+    }
 
     const shippingCost = computeShippingCost(shippingMethod, subtotal);
 
@@ -294,6 +347,7 @@ async function serializeOrder(orderId, userId) {
       name: i.product_name_snapshot,
       img: i.product_image_snapshot,
       size: i.size,
+      color: i.color,
       qty: i.qty,
       price: Number(i.unit_price),
     })),

@@ -21,13 +21,17 @@ function serializeProduct(row) {
     desc: row.description,
     rating: row.rating !== null ? Number(row.rating) : 0,
     reviews: row.reviews_count,
+    // [{color,size,stock}] — lets the frontend know what's actually
+    // available before the customer tries to check out (see product_variants).
+    variants: row.variants || [],
   };
 }
 
 const PRODUCT_SELECT = `
   SELECT p.*, c.name AS category_name,
     (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS primary_image,
-    COALESCE((SELECT json_agg(pi.url ORDER BY pi.sort_order ASC) FROM product_images pi WHERE pi.product_id = p.id), '[]') AS images
+    COALESCE((SELECT json_agg(pi.url ORDER BY pi.sort_order ASC) FROM product_images pi WHERE pi.product_id = p.id), '[]') AS images,
+    COALESCE((SELECT json_agg(json_build_object('color',pv.color,'size',pv.size,'stock',pv.stock_qty)) FROM product_variants pv WHERE pv.product_id = p.id), '[]') AS variants
   FROM products p
   LEFT JOIN categories c ON c.id = p.category_id
 `;

@@ -340,6 +340,7 @@ function renderProductDetail() {
           <button class="size-btn ${s===selectedSize?'active':''}" onclick="selectSize('${s}')" id="size-btn-${s}">${s}</button>
         `).join('')}
       </div>
+      <div id="stockHint" style="font-size:13px;font-weight:600;margin:-10px 0 16px"></div>
 
       <div class="section-label">Descrição</div>
       <p class="detail-desc">${p.desc}</p>
@@ -360,22 +361,66 @@ function renderProductDetail() {
       </div>
     </div>
 
-    <button class="detail-add-btn" onclick="addToCart(${p.id})">
+    <button class="detail-add-btn" id="detailAddBtn" onclick="addToCart(${p.id})">
       <span class="material-symbols-outlined">shopping_bag</span>
       Adicionar à Sacola
     </button>
   `;
+  updateStockHint();
+}
+
+// Looks up real stock for a color+size combo from the product's `variants`
+// (populated server-side from product_variants — see server/routes/products.js).
+// Returns null when there's simply no record for that combo (shouldn't happen
+// once a product has been through the admin sync, but treated as "unknown /
+// don't block" rather than "zero" so a data gap never wrongly blocks a sale).
+function stockFor(p, color, size) {
+  const v = (p.variants || []).find(x => x.color === (color || '') && x.size === (size || ''));
+  return v ? v.stock : null;
+}
+
+function currentColorValue() {
+  const p = selectedProduct;
+  return p && p.colors.length ? (p.colors[selectedColor] || '') : '';
+}
+
+function updateStockHint() {
+  const p = selectedProduct;
+  if (!p) return;
+  const hint = document.getElementById('stockHint');
+  const btn = document.getElementById('detailAddBtn');
+  if (!hint || !btn) return;
+  const stock = stockFor(p, currentColorValue(), selectedSize);
+  if (stock === null) { hint.textContent = ''; btn.disabled = false; btn.style.opacity = ''; return; }
+  if (stock <= 0) {
+    hint.textContent = '❌ Esgotado nesse tamanho/cor';
+    hint.style.color = 'var(--error)';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  } else if (stock <= 5) {
+    hint.textContent = `🔥 Só restam ${stock} unidades`;
+    hint.style.color = 'var(--error)';
+    btn.disabled = false;
+    btn.style.opacity = '';
+  } else {
+    hint.textContent = '✅ Em estoque';
+    hint.style.color = 'var(--success, #1a7b45)';
+    btn.disabled = false;
+    btn.style.opacity = '';
+  }
 }
 
 function selectSize(s) {
   selectedSize = s;
   document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('size-btn-'+s)?.classList.add('active');
+  updateStockHint();
 }
 
 function selectColor(i) {
   selectedColor = i;
   document.querySelectorAll('.color-swatch').forEach((s,j) => s.classList.toggle('active', j===i));
+  updateStockHint();
 }
 
 // ─────────────────────────────────────────────────────────
@@ -388,8 +433,9 @@ async function refreshCart() {
 
 async function addToCart(productId) {
   if (!selectedSize) { showToast('Selecione um tamanho!'); return; }
+  const color = currentColorValue();
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId, size: selectedSize, qty: 1 }) });
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId, size: selectedSize, color, qty: 1 }) });
     showToast('✅ Adicionado à sacola!');
     updateCartBadge();
     bumpCartIcon();
@@ -410,12 +456,6 @@ let quickBuyProduct = null;
 let quickBuySize = null;
 let quickBuyDeadline = null;
 let quickBuyTimerHandle = null;
-
-// Deterministic per-product "units left" (1-4) — just enough scarcity signal
-// to feel real without needing real per-size stock tracking on the backend.
-function quickBuyStockLeft(productId) {
-  return 1 + ((productId * 13) % 4);
-}
 
 function openQuickBuy(productId) {
   const p = PRODUCTS.find(x => x.id == productId);
@@ -439,7 +479,6 @@ function closeQuickBuy() {
 function renderQuickBuy() {
   const p = quickBuyProduct;
   if (!p) return;
-  const stock = quickBuyStockLeft(p.id);
   const content = document.getElementById('quickBuyContent');
   content.innerHTML = `
     <div class="quick-buy-header">
@@ -459,11 +498,8 @@ function renderQuickBuy() {
       <span class="quick-buy-timer" id="quickBuyTimer">05:00</span>
     </div>
 
-    <div class="quick-buy-stock">
-      <span class="material-symbols-outlined">local_fire_department</span>
-      <span>Só restam ${stock} unidade${stock > 1 ? 's' : ''} — está saindo rápido!</span>
-    </div>
-    <div class="quick-buy-stock-bar"><div class="quick-buy-stock-bar-fill" style="width:${stock * 20}%"></div></div>
+    <div class="quick-buy-stock" id="qbStockLine"></div>
+    <div class="quick-buy-stock-bar"><div class="quick-buy-stock-bar-fill" id="qbStockBar" style="width:0%"></div></div>
 
     ${p.sizes?.length ? `
     <div class="section-label">Escolha o tamanho</div>
@@ -477,12 +513,44 @@ function renderQuickBuy() {
     </button>
     <div class="quick-buy-secure">🔒 Pagamento seguro via Pix ou cartão</div>
   `;
+  updateQuickBuyStockDisplay();
+}
+
+// Reflects REAL stock (product_variants, via the product's `variants` field)
+// instead of a cosmetic fake number — quick-buy doesn't offer a color picker
+// (kept deliberately minimal for speed), so it always checks the product's
+// first color, matching what confirmQuickBuy() actually adds to the cart.
+function updateQuickBuyStockDisplay() {
+  const p = quickBuyProduct;
+  const line = document.getElementById('qbStockLine');
+  const bar = document.getElementById('qbStockBar');
+  const btn = document.getElementById('quickBuyCtaBtn');
+  if (!p || !line || !bar || !btn) return;
+  const color = p.colors?.[0] || '';
+  const stock = stockFor(p, color, quickBuySize);
+  if (stock === null || stock > 5) {
+    line.innerHTML = `<span class="material-symbols-outlined">local_fire_department</span><span>Peça muito procurada — garanta a sua!</span>`;
+    bar.style.width = '70%';
+    btn.disabled = false;
+    btn.style.opacity = '';
+  } else if (stock <= 0) {
+    line.innerHTML = `<span class="material-symbols-outlined">local_fire_department</span><span>Esgotado nesse tamanho no momento</span>`;
+    bar.style.width = '0%';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  } else {
+    line.innerHTML = `<span class="material-symbols-outlined">local_fire_department</span><span>Só resta${stock > 1 ? 'm' : ''} ${stock} unidade${stock > 1 ? 's' : ''} — está saindo rápido!</span>`;
+    bar.style.width = `${stock * 20}%`;
+    btn.disabled = false;
+    btn.style.opacity = '';
+  }
 }
 
 function selectQuickBuySize(s) {
   quickBuySize = s;
   document.querySelectorAll('#quickBuyContent .size-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('qb-size-' + s)?.classList.add('active');
+  updateQuickBuyStockDisplay();
 }
 
 function updateQuickBuyTimer() {
@@ -506,7 +574,7 @@ async function confirmQuickBuy() {
   const btn = document.getElementById('quickBuyCtaBtn');
   if (btn) btn.disabled = true;
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', qty: 1 }) });
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', color: p.colors?.[0] || '', qty: 1 }) });
     updateCartBadge();
     bumpCartIcon();
     closeQuickBuy();
@@ -535,11 +603,16 @@ function bumpCartIcon() {
   btn.classList.add('cart-bump');
 }
 
-// Default size for a quick "add to bag" action where there's no size-picker
-// UI (feed / grid cards) — same middle size the product detail page
-// defaults to, or 'Único' when the product has no size options at all.
+// Default size/color for a quick "add to bag" action where there's no
+// picker UI (feed / grid cards) — same middle size the product detail page
+// defaults to (or 'Único' with no size options), and the product's first
+// color. The server still enforces real stock at checkout regardless of
+// what gets added here.
 function defaultSizeFor(p) {
   return p.sizes?.[1] || p.sizes?.[0] || 'Único';
+}
+function defaultColorFor(p) {
+  return p.colors?.[0] || '';
 }
 
 // Adds to the cart straight from the feed without leaving it or triggering
@@ -550,7 +623,7 @@ async function addToBagFromFeed(productId, i) {
   if (!p) return;
   const circle = document.getElementById('feedCartBtn' + i)?.querySelector('.icon-circle');
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), qty: 1 }) });
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), color: defaultColorFor(p), qty: 1 }) });
     updateCartBadge();
     bumpCartIcon();
     if (circle) { circle.classList.remove('pop'); void circle.offsetWidth; circle.classList.add('pop'); }
@@ -567,7 +640,7 @@ async function addToBagFromCard(productId, event) {
   if (!p) return;
   const btn = event?.currentTarget;
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), qty: 1 }) });
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: defaultSizeFor(p), color: defaultColorFor(p), qty: 1 }) });
     updateCartBadge();
     bumpCartIcon();
     if (btn) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
@@ -582,7 +655,7 @@ async function changeQty(key, delta) {
   if (!item) return;
   const newQty = Math.max(0, item.qty + delta);
   try {
-    cart = await api('/api/cart', { method: 'PATCH', body: JSON.stringify({ productId: item.productId, size: item.size, qty: newQty }) });
+    cart = await api('/api/cart', { method: 'PATCH', body: JSON.stringify({ productId: item.productId, size: item.size, color: item.color, qty: newQty }) });
     updateCartBadge();
     renderCart();
   } catch (err) {
@@ -594,7 +667,7 @@ async function removeCartItem(key) {
   const item = cart.find(i => i.key === key);
   if (!item) return;
   try {
-    cart = await api('/api/cart', { method: 'DELETE', body: JSON.stringify({ productId: item.productId, size: item.size }) });
+    cart = await api('/api/cart', { method: 'DELETE', body: JSON.stringify({ productId: item.productId, size: item.size, color: item.color }) });
     updateCartBadge();
     renderCart();
     showToast('Item removido');
@@ -635,7 +708,7 @@ function renderCart() {
         <div class="cart-item-body">
           <div>
             <div class="cart-item-name">${ci.name}</div>
-            <div class="cart-item-variant">Tamanho: ${ci.size}</div>
+            <div class="cart-item-variant">Tamanho: ${ci.size}${ci.color ? ` &nbsp;•&nbsp; Cor: <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${ci.color};vertical-align:middle;border:1px solid var(--outline)"></span>` : ''}</div>
           </div>
           <div>
             ${ci.oldPrice ? `<div class="cart-item-price-old">${fmt(ci.oldPrice)}</div>` : ''}

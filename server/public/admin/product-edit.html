@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>BianaStore Admin — Produto</title>
 <link rel="stylesheet" href="admin.css"/>
+<style>
+  .stock-grid-wrap { overflow-x:auto; }
+  .stock-grid { border-collapse:collapse; }
+  .stock-grid th, .stock-grid td { text-align:center; padding:8px 10px; border:1px solid var(--outline); font-size:13px; }
+  .stock-grid th.corner { background:var(--surface-container); }
+  .stock-grid .color-head { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .stock-grid .swatch { width:18px; height:18px; border-radius:50%; border:1px solid var(--outline); }
+  .stock-grid input { width:64px; padding:5px; border:1px solid var(--outline); border-radius:6px; text-align:center; font-size:13px; }
+  .stock-grid input.zero { border-color: var(--error); color: var(--error); font-weight:700; }
+  .stock-hint { color: var(--on-surface-variant); font-size: 13px; }
+</style>
 </head>
 <body>
 <div class="topbar">
@@ -51,6 +62,16 @@
     <button class="btn" onclick="save()">Salvar</button>
     <span id="saveMsg"></span>
   </div>
+
+  <div class="card" id="stockCard" style="display:none">
+    <div class="toolbar" style="margin-bottom:12px">
+      <h2 style="margin:0;font-size:18px">Estoque por cor e tamanho</h2>
+      <button class="btn secondary" onclick="saveStock()">Salvar estoque</button>
+    </div>
+    <p class="stock-hint">Editou cores/tamanhos acima? Clique em "Salvar" primeiro — a grade se atualiza sozinha com as novas combinações.</p>
+    <div class="stock-grid-wrap"><div id="stockGrid"></div></div>
+    <span id="stockMsg"></span>
+  </div>
 </main>
 <script src="admin.js"></script>
 <script>
@@ -84,9 +105,68 @@ async function init() {
     isActive.checked = p.is_active !== false;
     images = p.images || [];
     renderGallery();
+    document.getElementById('stockCard').style.display = '';
+    loadStockGrid();
   }
 
   document.getElementById('fileInput').addEventListener('change', handleUpload);
+}
+
+// Renders a colors × sizes grid (each axis falls back to a single "—"
+// column/row when the product has none of that option) with one stock input
+// per cell, pre-filled from whatever variants already exist in the DB.
+async function loadStockGrid() {
+  const variants = await api(`/products/${productId}/variants`);
+  const stockByKey = {};
+  variants.forEach((v) => { stockByKey[`${v.color}|${v.size}`] = v.stock; });
+
+  const productColors = colors.value.split(',').map((s) => s.trim()).filter(Boolean);
+  const productSizes = sizes.value.split(',').map((s) => s.trim()).filter(Boolean);
+  const colorList = productColors.length ? productColors : [''];
+  const sizeList = productSizes.length ? productSizes : [''];
+
+  const grid = document.getElementById('stockGrid');
+  grid.innerHTML = `
+    <table class="stock-grid">
+      <thead>
+        <tr>
+          <th class="corner">Tamanho ↓ / Cor →</th>
+          ${colorList.map((c) => `<th>${c ? `<div class="color-head"><span class="swatch" style="background:${escapeHtml(c)}"></span><span>${escapeHtml(c)}</span></div>` : 'Sem cor'}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${sizeList.map((s) => `
+          <tr>
+            <th>${escapeHtml(s || 'Único')}</th>
+            ${colorList.map((c) => {
+              const key = `${c}|${s}`;
+              const stock = stockByKey[key] ?? 0;
+              return `<td><input type="number" min="0" class="${stock <= 0 ? 'zero' : ''}" data-color="${escapeHtml(c)}" data-size="${escapeHtml(s)}" value="${stock}"/></td>`;
+            }).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function saveStock() {
+  const inputs = document.querySelectorAll('#stockGrid input');
+  const variants = Array.from(inputs).map((inp) => ({
+    color: inp.dataset.color,
+    size: inp.dataset.size,
+    stock: Math.max(0, parseInt(inp.value, 10) || 0),
+  }));
+  const msg = document.getElementById('stockMsg');
+  try {
+    await api(`/products/${productId}/variants`, { method: 'PUT', body: JSON.stringify({ variants }) });
+    msg.textContent = 'Estoque salvo!';
+    msg.className = 'success-msg';
+    loadStockGrid();
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'error-msg';
+  }
 }
 
 function renderGallery() {
@@ -161,6 +241,8 @@ async function save() {
       await api(`/products/${productId}`, { method: 'PUT', body: JSON.stringify(payload) });
       msg.textContent = 'Salvo!';
       msg.className = 'success-msg';
+      document.getElementById('stockCard').style.display = '';
+      loadStockGrid();
     } else {
       const created = await api('/products', { method: 'POST', body: JSON.stringify(payload) });
       window.location.href = `/admin/product-edit.html?id=${created.id}`;

@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v12'; // bumped: corrige barra "Instalar" que vazava e bloqueava cliques no icone da sacola
+const CACHE_NAME = 'bianastore-v13'; // bumped: estoque real por cor+tamanho (cor agora viaja no carrinho/pedido)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=9',
+  '/app.js?v=10',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

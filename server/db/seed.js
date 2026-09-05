@@ -73,6 +73,19 @@ async function seed() {
         'INSERT INTO product_images (product_id, url, sort_order, is_primary) VALUES ($1,$2,0,true)',
         [productId, p.img]
       );
+      // Stock variants: schema.sql's own backfill only sees products that
+      // already exist, so on a brand-new database it runs BEFORE this seed
+      // inserts any — without this, freshly-seeded demo products would show
+      // zero stock everywhere until the next deploy re-runs that backfill.
+      for (const color of p.colors.length ? p.colors : ['']) {
+        for (const size of p.sizes.length ? p.sizes : ['']) {
+          await client.query(
+            `INSERT INTO product_variants (product_id, color, size, stock_qty) VALUES ($1,$2,$3,20)
+             ON CONFLICT (product_id, color, size) DO NOTHING`,
+            [productId, color, size]
+          );
+        }
+      }
     }
 
     for (const f of FEED) {

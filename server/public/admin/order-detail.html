@@ -57,13 +57,14 @@ async function load() {
     <div class="card">
       <h2 style="font-size:16px">Itens</h2>
       <table>
-        <thead><tr><th></th><th>Produto</th><th>Tam.</th><th>Qtd</th><th>Preço</th></tr></thead>
+        <thead><tr><th></th><th>Produto</th><th>Tam.</th><th>Cor</th><th>Qtd</th><th>Preço</th></tr></thead>
         <tbody>
           ${o.items.map((i) => `
             <tr>
               <td>${i.product_image_snapshot ? `<img class="thumb" src="${escapeHtml(i.product_image_snapshot)}"/>` : ''}</td>
               <td>${escapeHtml(i.product_name_snapshot)}</td>
               <td>${escapeHtml(i.size)}</td>
+              <td>${i.color ? `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${escapeHtml(i.color)};border:1px solid var(--outline);vertical-align:middle"></span>` : '—'}</td>
               <td>${i.qty}</td>
               <td>${fmtMoney(i.unit_price)}</td>
             </tr>`).join('')}

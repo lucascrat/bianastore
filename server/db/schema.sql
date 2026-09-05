@@ -39,6 +39,36 @@ CREATE TABLE IF NOT EXISTS product_images (
 );
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
 
+-- Real stock, one row per (color, size) combination actually sold. A product
+-- with no colors and/or no sizes gets '' for that column — every product
+-- always has at least one variant row, even a single-option one like the
+-- bag ("Único" size, no color choice at all).
+CREATE TABLE IF NOT EXISTS product_variants (
+  id SERIAL PRIMARY KEY,
+  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  color TEXT NOT NULL DEFAULT '',
+  size TEXT NOT NULL DEFAULT '',
+  stock_qty INT NOT NULL DEFAULT 0 CHECK (stock_qty >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(product_id, color, size)
+);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product ON product_variants(product_id);
+
+-- One-time-per-product backfill: creates a variant row for every
+-- color×size combination a product currently has, defaulting to 20 units so
+-- the storefront doesn't suddenly show everything as sold out the moment
+-- this feature ships — the admin reviews/adjusts real counts from there.
+-- ON CONFLICT DO NOTHING makes this safe to re-run on every deploy; it only
+-- ever fills in gaps (e.g. a newly-added color), never resets stock that's
+-- already been set for an existing combination.
+INSERT INTO product_variants (product_id, color, size, stock_qty)
+SELECT p.id, COALESCE(c.color, ''), COALESCE(s.size, ''), 20
+FROM products p
+LEFT JOIN LATERAL jsonb_array_elements_text(p.colors) AS c(color) ON true
+LEFT JOIN LATERAL jsonb_array_elements_text(p.sizes) AS s(size) ON true
+ON CONFLICT (product_id, color, size) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS feed_items (
   id SERIAL PRIMARY KEY,
   product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -61,6 +91,17 @@ CREATE TABLE IF NOT EXISTS cart_items (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, product_id, size)
 );
+
+-- Real per-variant (color × size) stock, added after the initial launch —
+-- cart_items/order_items only tracked size until now. A product with no
+-- explicit colors and/or sizes gets '' for that column, so every product has
+-- at least one variant row regardless of how many options it has.
+ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS color TEXT NOT NULL DEFAULT '';
+ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_size_key;
+DO $$ BEGIN
+  ALTER TABLE cart_items ADD CONSTRAINT cart_items_user_product_size_color_key UNIQUE (user_id, product_id, size, color);
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS favorites (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -112,6 +153,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   qty INT NOT NULL,
   unit_price NUMERIC(10,2) NOT NULL
 );
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS color TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS notifications (
   id SERIAL PRIMARY KEY,

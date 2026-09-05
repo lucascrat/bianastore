@@ -77,6 +77,26 @@ router.get('/products', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Keeps product_variants in sync with a product's current colors/sizes
+// arrays: inserts a (color,size) row for every combination that doesn't
+// already have one, defaulting new ones to 0 stock — the admin sets real
+// numbers from the Estoque screen. Never touches stock_qty for a combo that
+// already exists, and never deletes a now-unused combo (harmless leftover,
+// simplest to reason about; see product_variants comment in schema.sql).
+async function syncProductVariants(productId, colors, sizes) {
+  const colorList = (colors && colors.length ? colors : ['']);
+  const sizeList = (sizes && sizes.length ? sizes : ['']);
+  for (const color of colorList) {
+    for (const size of sizeList) {
+      await pool.query(
+        `INSERT INTO product_variants (product_id, color, size, stock_qty)
+         VALUES ($1,$2,$3,0) ON CONFLICT (product_id, color, size) DO NOTHING`,
+        [productId, color, size]
+      );
+    }
+  }
+}
+
 router.post('/products', async (req, res, next) => {
   try {
     const { name, sub, price, oldPrice, categoryId, colors, sizes, description, rating, reviewsCount } = req.body;
@@ -86,6 +106,7 @@ router.post('/products', async (req, res, next) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
       [name, sub || null, price, oldPrice || null, categoryId || null, JSON.stringify(colors || []), JSON.stringify(sizes || []), description || null, rating || 0, reviewsCount || 0]
     );
+    await syncProductVariants(rows[0].id, colors, sizes);
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
 });
@@ -99,6 +120,7 @@ router.put('/products/:id', async (req, res, next) => {
       [name, sub || null, price, oldPrice || null, categoryId || null, JSON.stringify(colors || []), JSON.stringify(sizes || []), description || null, rating || 0, reviewsCount || 0, isActive !== false, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Product not found' });
+    await syncProductVariants(req.params.id, colors, sizes);
     res.json(rows[0]);
   } catch (err) { next(err); }
 });
@@ -151,6 +173,104 @@ async function deleteFromR2IfOurs(url) {
     console.error('Failed to delete R2 object', key, err.message);
   }
 }
+
+// ---- Stock / Inventory ----
+router.get('/products/:id/variants', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, color, size, stock_qty FROM product_variants WHERE product_id=$1 ORDER BY color, size',
+      [req.params.id]
+    );
+    res.json(rows.map((r) => ({ id: r.id, color: r.color, size: r.size, stock: r.stock_qty })));
+  } catch (err) { next(err); }
+});
+
+// Bulk-save every variant of one product at once (the stock grid on the
+// product-edit screen sends its whole grid on "Salvar estoque").
+router.put('/products/:id/variants', async (req, res, next) => {
+  try {
+    const { variants } = req.body;
+    if (!Array.isArray(variants)) return res.status(400).json({ error: 'variants must be an array' });
+    for (const v of variants) {
+      await pool.query(
+        `INSERT INTO product_variants (product_id, color, size, stock_qty)
+         VALUES ($1,$2,$3,$4)
+         ON CONFLICT (product_id, color, size) DO UPDATE SET stock_qty = EXCLUDED.stock_qty, updated_at = now()`,
+        [req.params.id, v.color || '', v.size || '', Math.max(0, parseInt(v.stock, 10) || 0)]
+      );
+    }
+    const { rows } = await pool.query(
+      'SELECT id, color, size, stock_qty FROM product_variants WHERE product_id=$1 ORDER BY color, size',
+      [req.params.id]
+    );
+    res.json(rows.map((r) => ({ id: r.id, color: r.color, size: r.size, stock: r.stock_qty })));
+  } catch (err) { next(err); }
+});
+
+// Global stock manager: every variant across every product, joined with the
+// product's name/thumbnail/category so admin can see what belongs to what,
+// with optional filters — color AND size can be combined to answer things
+// like "what do we have left in red, size M".
+router.get('/inventory', async (req, res, next) => {
+  try {
+    const { color, size, q } = req.query;
+    const params = [];
+    let sql = `
+      SELECT pv.id, pv.color, pv.size, pv.stock_qty, pv.updated_at,
+        p.id AS product_id, p.name AS product_name, p.is_active,
+        c.name AS category_name,
+        (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS img
+      FROM product_variants pv
+      JOIN products p ON p.id = pv.product_id
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE 1=1
+    `;
+    if (color) { params.push(color); sql += ` AND pv.color = $${params.length}`; }
+    if (size) { params.push(size); sql += ` AND pv.size = $${params.length}`; }
+    if (q) { params.push(`%${q}%`); sql += ` AND p.name ILIKE $${params.length}`; }
+    sql += ' ORDER BY p.name ASC, pv.color ASC, pv.size ASC';
+    const { rows } = await pool.query(sql, params);
+
+    // Distinct color/size values across ALL variants (unfiltered) so the two
+    // filter dropdowns always list every option that exists, not just the
+    // ones in the current filtered result.
+    const { rows: colorRows } = await pool.query(`SELECT DISTINCT color FROM product_variants WHERE color != '' ORDER BY color`);
+    const { rows: sizeRows } = await pool.query(`SELECT DISTINCT size FROM product_variants WHERE size != '' ORDER BY size`);
+
+    res.json({
+      items: rows.map((r) => ({
+        id: r.id,
+        color: r.color,
+        size: r.size,
+        stock: r.stock_qty,
+        updatedAt: r.updated_at,
+        productId: r.product_id,
+        productName: r.product_name,
+        isActive: r.is_active,
+        category: r.category_name,
+        img: r.img,
+      })),
+      filters: {
+        colors: colorRows.map((r) => r.color),
+        sizes: sizeRows.map((r) => r.size),
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// Quick inline stock edit from the global inventory table (one variant at a time).
+router.patch('/inventory/:variantId', async (req, res, next) => {
+  try {
+    const { stock } = req.body;
+    if (stock === undefined || stock < 0) return res.status(400).json({ error: 'stock must be >= 0' });
+    const { rows } = await pool.query(
+      'UPDATE product_variants SET stock_qty=$1, updated_at=now() WHERE id=$2 RETURNING id, color, size, stock_qty',
+      [Math.max(0, parseInt(stock, 10) || 0), req.params.variantId]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Variant not found' });
+    res.json({ id: rows[0].id, color: rows[0].color, size: rows[0].size, stock: rows[0].stock_qty });
+  } catch (err) { next(err); }
+});
 
 // ---- Categories ----
 router.get('/categories', async (req, res, next) => {
