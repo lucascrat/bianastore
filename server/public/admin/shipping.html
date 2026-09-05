@@ -24,6 +24,7 @@
 <main>
   <h2>Frete por região</h2>
   <p style="color:var(--on-surface-variant);font-size:14px;margin-top:-8px">Cada zona cobre uma lista de estados (UF). O frete "Padrão" fica grátis automaticamente acima de R$ 299 — o valor abaixo só vale pra pedidos menores.</p>
+  <div class="error-msg" id="overlapWarning" style="display:none"></div>
 
   <div class="card">
     <h3 style="margin:0 0 12px">Nova zona</h3>
@@ -54,7 +55,30 @@ let zones = [];
 async function load() {
   await requireAuth();
   zones = await api('/shipping-zones');
+  checkOverlaps();
   render();
+}
+
+// A state claimed by two zones is silently ambiguous (whichever has the
+// lower sort_order just wins, with no indication anything's wrong) — this
+// won't stop you from saving it, but at least surfaces it clearly so it's
+// never an accident.
+function checkOverlaps() {
+  const seenBy = {};
+  const overlapping = new Set();
+  zones.forEach((z) => {
+    (z.states || []).forEach((uf) => {
+      if (seenBy[uf] && seenBy[uf] !== z.name) overlapping.add(`${uf} (${seenBy[uf]} e ${z.name})`);
+      seenBy[uf] = z.name;
+    });
+  });
+  const el = document.getElementById('overlapWarning');
+  if (overlapping.size) {
+    el.textContent = `⚠️ Estado(s) em mais de uma zona: ${Array.from(overlapping).join(', ')} — só a zona de ordem menor é usada.`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 function render() {

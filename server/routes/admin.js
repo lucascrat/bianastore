@@ -375,13 +375,24 @@ router.get('/dashboard', async (req, res, next) => {
         FROM orders
       `),
       pool.query(`SELECT status, COUNT(*)::int AS count FROM orders GROUP BY status`),
+      // Grouped by product_id ONLY, using the product's CURRENT name/photo
+      // (falling back to the last order's snapshot if the product no longer
+      // exists) — grouping by the snapshot columns too, as this used to,
+      // fragmented a single product's sales into multiple rows every time
+      // its name or primary photo was edited after it already had sales.
       pool.query(`
-        SELECT oi.product_id, oi.product_name_snapshot AS name, oi.product_image_snapshot AS img,
+        SELECT oi.product_id,
+          COALESCE(p.name, (array_agg(oi.product_name_snapshot ORDER BY oi.id DESC))[1]) AS name,
+          COALESCE(pi.url, (array_agg(oi.product_image_snapshot ORDER BY oi.id DESC))[1]) AS img,
           SUM(oi.qty)::int AS units_sold, SUM(oi.qty * oi.unit_price) AS revenue
         FROM order_items oi
         JOIN orders o ON o.id = oi.order_id
+        LEFT JOIN products p ON p.id = oi.product_id
+        LEFT JOIN LATERAL (
+          SELECT url FROM product_images WHERE product_id = oi.product_id ORDER BY is_primary DESC, sort_order ASC LIMIT 1
+        ) pi ON true
         WHERE o.payment_status = 'paid'
-        GROUP BY oi.product_id, oi.product_name_snapshot, oi.product_image_snapshot
+        GROUP BY oi.product_id, p.name, pi.url
         ORDER BY units_sold DESC
         LIMIT 5
       `),
