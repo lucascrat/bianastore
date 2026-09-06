@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v16'; // bumped: corrige app.js/index.html presos em cache antigo pra sempre (HTML agora e network-first, nao cache-first)
+const CACHE_NAME = 'bianastore-v17'; // bumped: quick-buy do feed agora mostra seletor de cor
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=12',
+  '/app.js?v=13',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

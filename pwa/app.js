@@ -494,6 +494,7 @@ async function addToCart(productId) {
 // ─────────────────────────────────────────────────────────
 let quickBuyProduct = null;
 let quickBuySize = null;
+let quickBuyColor = null;
 let quickBuyDeadline = null;
 let quickBuyTimerHandle = null;
 
@@ -502,6 +503,7 @@ function openQuickBuy(productId) {
   if (!p) return;
   quickBuyProduct = p;
   quickBuySize = p.sizes?.[1] || p.sizes?.[0] || null;
+  quickBuyColor = p.colors?.[0] || '';
   quickBuyDeadline = Date.now() + 5 * 60 * 1000; // 5-minute reservation window, resets every time the sheet opens
   renderQuickBuy();
   document.getElementById('quickBuyOverlay').classList.add('active');
@@ -541,6 +543,12 @@ function renderQuickBuy() {
     <div class="quick-buy-stock" id="qbStockLine"></div>
     <div class="quick-buy-stock-bar"><div class="quick-buy-stock-bar-fill" id="qbStockBar" style="width:0%"></div></div>
 
+    ${p.colors?.length > 1 ? `
+    <div class="section-label">Cor</div>
+    <div class="color-row" id="qbColorRow">
+      ${p.colors.map((c, i) => `<div class="color-swatch ${c === quickBuyColor ? 'active' : ''}" style="background:${c}" onclick="selectQuickBuyColor(${i})" id="qb-color-${i}"></div>`).join('')}
+    </div>` : ''}
+
     ${p.sizes?.length ? `
     <div class="section-label">Escolha o tamanho</div>
     <div class="size-row">
@@ -557,17 +565,15 @@ function renderQuickBuy() {
 }
 
 // Reflects REAL stock (product_variants, via the product's `variants` field)
-// instead of a cosmetic fake number — quick-buy doesn't offer a color picker
-// (kept deliberately minimal for speed), so it always checks the product's
-// first color, matching what confirmQuickBuy() actually adds to the cart.
+// for whichever color+size is currently selected — matches exactly what
+// confirmQuickBuy() adds to the cart.
 function updateQuickBuyStockDisplay() {
   const p = quickBuyProduct;
   const line = document.getElementById('qbStockLine');
   const bar = document.getElementById('qbStockBar');
   const btn = document.getElementById('quickBuyCtaBtn');
   if (!p || !line || !bar || !btn) return;
-  const color = p.colors?.[0] || '';
-  const stock = stockFor(p, color, quickBuySize);
+  const stock = stockFor(p, quickBuyColor, quickBuySize);
   if (stock === null || stock > 5) {
     line.innerHTML = `<span class="material-symbols-outlined">local_fire_department</span><span>Peça muito procurada — garanta a sua!</span>`;
     bar.style.width = '70%';
@@ -593,6 +599,12 @@ function selectQuickBuySize(s) {
   updateQuickBuyStockDisplay();
 }
 
+function selectQuickBuyColor(i) {
+  quickBuyColor = quickBuyProduct.colors[i];
+  document.querySelectorAll('#qbColorRow .color-swatch').forEach((el, j) => el.classList.toggle('active', j === i));
+  updateQuickBuyStockDisplay();
+}
+
 function updateQuickBuyTimer() {
   const el = document.getElementById('quickBuyTimer');
   if (!el) { clearInterval(quickBuyTimerHandle); return; }
@@ -614,7 +626,7 @@ async function confirmQuickBuy() {
   const btn = document.getElementById('quickBuyCtaBtn');
   if (btn) btn.disabled = true;
   try {
-    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', color: p.colors?.[0] || '', qty: 1 }) });
+    cart = await api('/api/cart', { method: 'POST', body: JSON.stringify({ productId: p.id, size: quickBuySize || 'Único', color: quickBuyColor || '', qty: 1 }) });
     updateCartBadge();
     bumpCartIcon();
     closeQuickBuy();
