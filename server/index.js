@@ -65,7 +65,21 @@ app.use('/api/push', pushRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/coupons', couponsRoutes);
 
-app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
+// The admin panel is plain static files with no cache-busting version
+// string (unlike pwa/app.js's ?v=N + no-store rule) — without an explicit
+// header here they were picking up a 4h Cache-Control from somewhere
+// upstream (Cloudflare's default Browser Cache TTL, most likely, since
+// serve-static's own default is max-age=0). Every admin.js/HTML edit
+// deployed could then sit stale in an admin's browser for hours. "no-cache"
+// (not "no-store") still lets the browser keep a copy, but forces it to
+// revalidate via ETag on every load — a 304 when nothing changed, the real
+// file the moment something did.
+app.use('/admin', express.static(path.join(__dirname, 'public/admin'), {
+  etag: true,
+  lastModified: true,
+  maxAge: 0,
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
