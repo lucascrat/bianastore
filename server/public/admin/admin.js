@@ -28,6 +28,14 @@ function fmtMoney(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
 }
 
+// Product reference code shown to admin and customers alike — just the
+// product's own id (stable forever, never reused: products are soft-deleted,
+// never actually removed from the table) formatted as "#01", "#02", ... No
+// separate column/schema needed; this is purely a display convention.
+function productCode(id) {
+  return '#' + String(id).padStart(2, '0');
+}
+
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }

@@ -138,7 +138,7 @@ function renderRows(items) {
     return `
       <tr id="variant-row-${it.id}">
         <td>${it.img ? `<img class="thumb" src="${escapeHtml(it.img)}"/>` : ''}</td>
-        <td>${escapeHtml(it.productName)}${it.isActive === false ? ' <span class="badge inactive">inativo</span>' : ''}</td>
+        <td><b>${productCode(it.productId)}</b> ${escapeHtml(it.productName)}${it.isActive === false ? ' <span class="badge inactive">inativo</span>' : ''}</td>
         <td>${escapeHtml(it.category || '—')}</td>
         <td><div class="swatch-cell">${swatch}</div></td>
         <td>${escapeHtml(it.size || '—')}</td>

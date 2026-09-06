@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v17'; // bumped: quick-buy do feed agora mostra seletor de cor
+const CACHE_NAME = 'bianastore-v18'; // bumped: codigo de referencia do produto (#01, #02...)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=13',
+  '/app.js?v=14',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

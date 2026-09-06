@@ -359,7 +359,7 @@ function renderProductDetail() {
         <span class="reviews-count">${p.rating} (${p.reviews} avaliações)</span>
       </div>
       <h2 class="detail-name">${p.name}</h2>
-      <p class="detail-sub">${p.sub}</p>
+      <p class="detail-sub">${p.sub} <span style="color:var(--outline);font-size:12px">· Ref: ${productCode(p.id)}</span></p>
       <div class="detail-prices">
         <span class="detail-price">R$ ${p.price.toFixed(2).replace('.',',')}</span>
         ${p.oldPrice ? `<span class="detail-price-old">R$ ${p.oldPrice.toFixed(2).replace('.',',')}</span>` : ''}
@@ -759,7 +759,7 @@ function renderCart() {
         <img class="cart-item-img" src="${ci.img}" alt="${ci.name}" loading="lazy"/>
         <div class="cart-item-body">
           <div>
-            <div class="cart-item-name">${ci.name}</div>
+            <div class="cart-item-name">${ci.name} <span style="color:var(--outline);font-weight:400;font-size:12px">${productCode(ci.productId)}</span></div>
             <div class="cart-item-variant">Tamanho: ${ci.size}${ci.color ? ` &nbsp;•&nbsp; Cor: <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${ci.color};vertical-align:middle;border:1px solid var(--outline)"></span>` : ''}</div>
           </div>
           <div>
@@ -1480,6 +1480,13 @@ async function renderProfile() {
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Product reference code shown to customers (e.g. handy when contacting
+// support about a specific piece) — just the product's own id, stable
+// forever, formatted as "#01", "#02", ... Mirrors admin.js's productCode().
+function productCode(id) {
+  return '#' + String(id).padStart(2, '0');
 }
 
 // ─────────────────────────────────────────────────────────

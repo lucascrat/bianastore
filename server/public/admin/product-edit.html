@@ -41,7 +41,7 @@
 </div>
 <main>
   <div class="toolbar">
-    <h2 id="title">Novo Produto</h2>
+    <h2 id="title">Novo Produto <span class="badge processing" id="productCodeBadge" style="display:none;font-size:13px;vertical-align:middle;margin-left:6px"></span></h2>
     <a class="btn secondary" href="/admin/index.html">← Voltar</a>
   </div>
 
@@ -190,7 +190,10 @@ async function init() {
     categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
 
   if (productId) {
-    document.getElementById('title').textContent = 'Editar Produto';
+    document.getElementById('title').firstChild.textContent = 'Editar Produto ';
+    const codeBadge = document.getElementById('productCodeBadge');
+    codeBadge.textContent = productCode(productId);
+    codeBadge.style.display = '';
     const products = await api('/products');
     const p = products.find((x) => String(x.id) === productId);
     if (!p) return;
