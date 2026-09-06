@@ -92,7 +92,7 @@ async function init() {
     const products = await api('/products');
     const p = products.find((x) => String(x.id) === productId);
     if (!p) return;
-    name.value = p.name || '';
+    document.getElementById('name').value = p.name || '';
     sub.value = p.sub || '';
     price.value = p.price || '';
     oldPrice.value = p.old_price || '';
@@ -222,8 +222,16 @@ async function removeImage(imageId) {
 }
 
 async function save() {
+  // Was "name.value" — "name" is a real, always-present browser global
+  // (window.name, a plain string used for cross-window messaging), and it
+  // silently wins over the auto-exposed reference to <input id="name">. So
+  // this line was reading/writing a string's nonexistent .value (undefined)
+  // instead of the actual field — every save silently sent name:undefined,
+  // which the server's "create" validation rejected outright and the
+  // "update" route had no such guard for, so it would have hit products.name's
+  // NOT NULL constraint and failed with a raw 500 on every single edit.
   const payload = {
-    name: name.value,
+    name: document.getElementById('name').value,
     sub: sub.value,
     price: parseFloat(price.value),
     oldPrice: oldPrice.value ? parseFloat(oldPrice.value) : null,

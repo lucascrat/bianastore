@@ -114,6 +114,11 @@ router.post('/products', async (req, res, next) => {
 router.put('/products/:id', async (req, res, next) => {
   try {
     const { name, sub, price, oldPrice, categoryId, colors, sizes, description, rating, reviewsCount, isActive } = req.body;
+    // Was missing entirely — a client-side bug (see product-edit.html) could
+    // send name:undefined and this would previously just crash on the
+    // column's NOT NULL constraint with a raw 500. Fail with a clear 400
+    // instead, same as the create route already does.
+    if (!name || price === undefined) return res.status(400).json({ error: 'name and price are required' });
     const { rows } = await pool.query(
       `UPDATE products SET name=$1, sub=$2, price=$3, old_price=$4, category_id=$5, colors=$6, sizes=$7, description=$8, rating=$9, reviews_count=$10, is_active=$11, updated_at=now()
        WHERE id=$12 RETURNING *`,

@@ -798,6 +798,16 @@ function renderCart() {
 // CHECKOUT
 // ─────────────────────────────────────────────────────────
 function renderCheckout() {
+  // Guards against an empty-cart checkout (e.g. the last item was removed
+  // from another tab/device while this one still had the checkout screen
+  // open) — without this, the screen rendered a "Total do pedido R$14,90"
+  // for a shipping fee alone with no items to justify it, and only failed
+  // (confusingly) once the customer actually tapped "Confirmar Pedido".
+  if (cart.length === 0) {
+    showToast('Sua sacola está vazia');
+    navigateTo('cart');
+    return;
+  }
   const content = document.getElementById('checkoutContent');
   const { total } = getCartTotals();
   const fmt = v => `R$ ${v.toFixed(2).replace('.',',')}`;
