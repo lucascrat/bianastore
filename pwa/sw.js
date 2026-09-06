@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v14'; // bumped: frete real por regiao, cupom de desconto, busca/ordenacao no Shop, CEP automatico, corrige voltar/compartilhar
+const CACHE_NAME = 'bianastore-v15'; // bumped: corrige checkout acessivel com carrinho vazio
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=11',
+  '/app.js?v=12',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
