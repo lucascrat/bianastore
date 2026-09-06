@@ -15,6 +15,22 @@
   .stock-grid input { width:64px; padding:5px; border:1px solid var(--outline); border-radius:6px; text-align:center; font-size:13px; }
   .stock-grid input.zero { border-color: var(--error); color: var(--error); font-weight:700; }
   .stock-hint { color: var(--on-surface-variant); font-size: 13px; }
+
+  .color-palette { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0 4px; padding:14px; background:var(--surface-container); border-radius:12px; }
+  .color-swatch-item { display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; width:60px; user-select:none; }
+  .color-swatch-item .dot { width:34px; height:34px; border-radius:50%; border:2px solid var(--outline); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); transition: transform .12s, border-color .15s, box-shadow .15s; }
+  .color-swatch-item:active .dot { transform: scale(0.88); }
+  .color-swatch-item.selected .dot { border-color: var(--primary); border-width:3px; transform: scale(1.08); box-shadow: 0 2px 6px rgba(176,0,74,0.35); }
+  .color-swatch-item .label { font-size:10.5px; color:var(--on-surface-variant); text-align:center; line-height:1.25; }
+  .color-swatch-item.selected .label { color: var(--primary); font-weight:700; }
+  .color-selected-row { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:22px; }
+  .color-empty-hint { font-size:13px; color:var(--on-surface-variant); }
+  .color-chip { display:flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--outline); border-radius:99px; padding:5px 10px 5px 5px; font-size:12.5px; }
+  .color-chip .dot { width:18px; height:18px; border-radius:50%; border:1px solid var(--outline); flex-shrink:0; }
+  .color-chip button { background:none; border:none; cursor:pointer; color:var(--on-surface-variant); font-size:15px; line-height:1; padding:0 2px; }
+  .color-chip button:hover { color: var(--error); }
+  .color-custom-row { display:flex; gap:10px; align-items:center; margin-top:10px; }
+  .color-custom-row input[type=color] { width:44px; height:38px; padding:2px; border:1px solid var(--outline); border-radius:8px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -39,9 +55,16 @@
       <div class="field"><label>Preço (R$)</label><input id="price" type="number" step="0.01"/></div>
       <div class="field"><label>Preço antigo (opcional, para desconto)</label><input id="oldPrice" type="number" step="0.01"/></div>
     </div>
-    <div class="row">
-      <div class="field"><label>Cores (hex, separadas por vírgula)</label><input id="colors" placeholder="#F5C2C7, #191c1d"/></div>
-      <div class="field"><label>Tamanhos (separados por vírgula)</label><input id="sizes" placeholder="P, M, G, GG"/></div>
+    <div class="field"><label>Tamanhos (separados por vírgula)</label><input id="sizes" placeholder="P, M, G, GG"/></div>
+
+    <div class="field">
+      <label>Cores disponíveis</label>
+      <div class="color-palette" id="colorPalette"></div>
+      <div class="color-selected-row" id="selectedColorsRow"></div>
+      <div class="color-custom-row">
+        <input type="color" id="customColorPicker" value="#b0004a" title="Escolher cor personalizada"/>
+        <button type="button" class="btn secondary" onclick="addCustomColor()">+ Adicionar cor personalizada</button>
+      </div>
     </div>
     <div class="field"><label>Descrição</label><textarea id="description"></textarea></div>
     <div class="row">
@@ -80,8 +103,87 @@ const params = new URLSearchParams(location.search);
 const productId = params.get('id');
 let images = [];
 
+// Curated palette of common clothing colors — replaces the old "type a hex
+// code by hand" field. Admin just clicks; a native color picker below
+// covers anything not in this list. Only the hex values are ever actually
+// stored (products.colors stays a plain array of hex strings, same as
+// before) — the names here are purely a display/labeling convenience.
+const COLOR_PALETTE = [
+  { name: 'Preto', hex: '#191c1d' },
+  { name: 'Branco', hex: '#FFFFFF' },
+  { name: 'Cinza Claro', hex: '#C4C4C4' },
+  { name: 'Cinza Chumbo', hex: '#4A4A4A' },
+  { name: 'Bege', hex: '#E8DCC8' },
+  { name: 'Nude', hex: '#E8C4A0' },
+  { name: 'Marrom', hex: '#6B4423' },
+  { name: 'Vinho', hex: '#6B1F2A' },
+  { name: 'Vermelho', hex: '#C41E3A' },
+  { name: 'Rosa Claro', hex: '#F5C2C7' },
+  { name: 'Rosa Pink', hex: '#E91E8C' },
+  { name: 'Laranja', hex: '#E8804A' },
+  { name: 'Amarelo', hex: '#F0D264' },
+  { name: 'Verde', hex: '#4A7856' },
+  { name: 'Verde Militar', hex: '#6B7355' },
+  { name: 'Azul Marinho', hex: '#1F3A5F' },
+  { name: 'Azul Serenity', hex: '#A8C5D6' },
+  { name: 'Roxo', hex: '#6B4A7A' },
+  { name: 'Dourado', hex: '#C9A961' },
+  { name: 'Prata', hex: '#C0C0C0' },
+];
+let selectedColors = []; // array of hex strings — source of truth for the "colors" field
+
+function renderColorPalette() {
+  document.getElementById('colorPalette').innerHTML = COLOR_PALETTE.map((c) => {
+    const isSelected = selectedColors.some((s) => s.toLowerCase() === c.hex.toLowerCase());
+    return `
+      <div class="color-swatch-item ${isSelected ? 'selected' : ''}" onclick="toggleColor('${c.hex}')" title="${c.name} (${c.hex})">
+        <div class="dot" style="background:${c.hex}"></div>
+        <div class="label">${c.name}</div>
+      </div>`;
+  }).join('');
+  renderSelectedColors();
+}
+
+function renderSelectedColors() {
+  const row = document.getElementById('selectedColorsRow');
+  if (!selectedColors.length) {
+    row.innerHTML = '<span class="color-empty-hint">Nenhuma cor selecionada ainda — clique na paleta acima.</span>';
+    return;
+  }
+  row.innerHTML = selectedColors.map((hex) => {
+    const known = COLOR_PALETTE.find((c) => c.hex.toLowerCase() === hex.toLowerCase());
+    return `
+      <div class="color-chip">
+        <span class="dot" style="background:${hex}"></span>
+        <span>${known ? known.name : hex}</span>
+        <button type="button" onclick="removeColor('${hex}')" title="Remover">×</button>
+      </div>`;
+  }).join('');
+}
+
+function toggleColor(hex) {
+  const idx = selectedColors.findIndex((s) => s.toLowerCase() === hex.toLowerCase());
+  if (idx >= 0) selectedColors.splice(idx, 1);
+  else selectedColors.push(hex);
+  renderColorPalette();
+}
+
+function removeColor(hex) {
+  selectedColors = selectedColors.filter((s) => s.toLowerCase() !== hex.toLowerCase());
+  renderColorPalette();
+}
+
+function addCustomColor() {
+  const hex = document.getElementById('customColorPicker').value;
+  if (!selectedColors.some((s) => s.toLowerCase() === hex.toLowerCase())) {
+    selectedColors.push(hex);
+    renderColorPalette();
+  }
+}
+
 async function init() {
   await requireAuth();
+  renderColorPalette();
   const categories = await api('/categories');
   document.getElementById('categoryId').innerHTML =
     '<option value="">— sem categoria —</option>' +
@@ -97,7 +199,8 @@ async function init() {
     price.value = p.price || '';
     oldPrice.value = p.old_price || '';
     categoryId.value = p.category_id || '';
-    colors.value = (p.colors || []).join(', ');
+    selectedColors = (p.colors || []).slice();
+    renderColorPalette();
     sizes.value = (p.sizes || []).join(', ');
     description.value = p.description || '';
     rating.value = p.rating || '';
@@ -120,7 +223,7 @@ async function loadStockGrid() {
   const stockByKey = {};
   variants.forEach((v) => { stockByKey[`${v.color}|${v.size}`] = v.stock; });
 
-  const productColors = colors.value.split(',').map((s) => s.trim()).filter(Boolean);
+  const productColors = selectedColors;
   const productSizes = sizes.value.split(',').map((s) => s.trim()).filter(Boolean);
   const colorList = productColors.length ? productColors : [''];
   const sizeList = productSizes.length ? productSizes : [''];
@@ -236,7 +339,7 @@ async function save() {
     price: parseFloat(price.value),
     oldPrice: oldPrice.value ? parseFloat(oldPrice.value) : null,
     categoryId: categoryId.value || null,
-    colors: colors.value.split(',').map((s) => s.trim()).filter(Boolean),
+    colors: selectedColors,
     sizes: sizes.value.split(',').map((s) => s.trim()).filter(Boolean),
     description: description.value,
     rating: rating.value ? parseFloat(rating.value) : 0,
