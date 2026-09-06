@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bianastore-v15'; // bumped: corrige checkout acessivel com carrinho vazio
+const CACHE_NAME = 'bianastore-v16'; // bumped: corrige app.js/index.html presos em cache antigo pra sempre (HTML agora e network-first, nao cache-first)
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -27,7 +27,7 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for assets
+// Fetch: network-first for the app shell HTML, cache-first for versioned assets
 self.addEventListener('fetch', e => {
   const { request } = e;
   const url = new URL(request.url);
@@ -36,21 +36,47 @@ self.addEventListener('fetch', e => {
   if (request.method !== 'GET') return;
   if (url.origin !== location.origin) return;
 
-  // Cache-first for same-origin static assets
-  if (url.origin === location.origin) {
+  // The app shell HTML (/ and /index.html, or any navigation) was the
+  // actual source of a real bug: serving it cache-first meant that if a
+  // stale copy EVER landed in the cache (e.g. a leftover background tab
+  // still fetching an old ?v=N asset gets cached alongside it), every
+  // future load kept re-serving that same stale HTML forever — with its
+  // old app.js?v=N reference baked in — and the app could never update
+  // itself again short of the user manually clearing site data. Network-first
+  // here means a new deploy is picked up on the very next load while
+  // online; cache is only a fallback for genuinely being offline.
+  const isAppShell = request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html';
+  if (isAppShell) {
     e.respondWith(
-      caches.match(request).then(cached => {
-        const fetchPromise = fetch(request).then(res => {
+      fetch(request)
+        .then(res => {
           if (res && res.status === 200) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
           }
           return res;
-        }).catch(() => cached);
-        return cached || fetchPromise;
-      })
+        })
+        .catch(() => caches.match(request))
     );
+    return;
   }
+
+  // Cache-first (stale-while-revalidate) for everything else — versioned
+  // assets like app.js?v=N, icons, and the font are safe to serve
+  // immediately from cache since their URL itself changes whenever the
+  // content does.
+  e.respondWith(
+    caches.match(request).then(cached => {
+      const fetchPromise = fetch(request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        }
+        return res;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
+  );
 });
 
 // Push notifications
