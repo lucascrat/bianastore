@@ -11,11 +11,14 @@
   .filters .field input, .filters .field select { min-width:150px; }
   .filters .field.price { min-width:auto; }
   .filters .field.price input { min-width:88px; width:88px; }
-  .color-filter { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
-  .color-filter .lbl { font-size:13px; font-weight:700; color:var(--on-surface-variant); margin-right:2px; }
-  .cchip { width:26px; height:26px; border-radius:50%; border:2px solid var(--outline); cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); transition:transform .1s, box-shadow .15s; }
-  .cchip:hover { transform:scale(1.1); }
-  .cchip.active { border-color:var(--primary); box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--primary); transform:scale(1.1); }
+  .color-filter { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; margin-bottom:16px; }
+  .color-filter .lbl { font-size:13px; font-weight:700; color:var(--on-surface-variant); padding-top:6px; margin-right:2px; }
+  .cchip { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; width:58px; user-select:none; }
+  .cchip .dot { width:28px; height:28px; border-radius:50%; border:2px solid var(--outline); box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); transition:transform .1s, box-shadow .15s; }
+  .cchip:hover .dot { transform:scale(1.1); }
+  .cchip.active .dot { border-color:var(--primary); box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--primary); transform:scale(1.1); }
+  .cchip .cname { font-size:10px; color:var(--on-surface-variant); text-align:center; line-height:1.2; }
+  .cchip.active .cname { color:var(--primary); font-weight:700; }
   .results-count { font-size:13px; color:var(--on-surface-variant); margin-bottom:12px; }
   .pgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; }
   .pcard { background:var(--surface); border:1px solid var(--outline); border-radius:12px; overflow:hidden; cursor:pointer; transition:box-shadow .15s, transform .1s; display:flex; flex-direction:column; }
@@ -23,7 +26,11 @@
   .pcard .pimg { width:100%; aspect-ratio:3/4; object-fit:cover; background:var(--surface-container); display:block; }
   .pcard .pimg.placeholder { display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant); font-size:12px; }
   .pcard .pbody { padding:10px 12px 12px; display:flex; flex-direction:column; gap:5px; flex:1; }
-  .pcard .pcode { font-size:11px; font-weight:800; color:var(--primary); font-family:'Plus Jakarta Sans',sans-serif; }
+  .pcard .pcode-row { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+  .pcard .pcode { font-size:22px; font-weight:800; color:var(--primary); font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:-0.5px; }
+  .pcard .pcopy { font-size:11px; font-weight:700; color:var(--on-surface-variant); background:var(--surface-container); border:1px solid var(--outline); border-radius:6px; padding:2px 8px; cursor:pointer; }
+  .pcard .pcopy:hover { background:var(--surface-container-high); }
+  .pcard .pinactive { font-size:11px; color:#777; }
   .pcard .pname { font-size:14px; font-weight:700; line-height:1.25; }
   .pcard .psub { font-size:12px; color:var(--on-surface-variant); }
   .pcard .pmeta { font-size:12px; color:var(--on-surface-variant); }
@@ -44,7 +51,10 @@
 </div>
 <main>
   <div class="toolbar">
-    <h2>Buscar Peça</h2>
+    <div>
+      <h2 style="margin-bottom:4px">Buscar Peça</h2>
+      <p style="margin:0;font-size:13px;color:var(--on-surface-variant)">Filtre por cor, categoria, tamanho… e descubra o código da peça</p>
+    </div>
     <button class="btn secondary" onclick="clearFilters()">Limpar filtros</button>
   </div>
 
@@ -164,7 +174,11 @@ async function load() {
 function renderColorFilter() {
   const el = document.getElementById('colorFilter');
   el.innerHTML = '<span class="lbl">Cor:</span>' +
-    filterColors.map((hex) => `<div class="cchip ${hex === activeColor ? 'active' : ''}" style="background:${escapeHtml(hex)}" title="${escapeHtml(colorName(hex))}" onclick="toggleColor('${escapeHtml(hex)}')"></div>`).join('');
+    filterColors.map((hex) => `
+      <div class="cchip ${hex === activeColor ? 'active' : ''}" onclick="toggleColor('${escapeHtml(hex)}')" title="${escapeHtml(hex)}">
+        <div class="dot" style="background:${escapeHtml(hex)}"></div>
+        <div class="cname">${escapeHtml(colorName(hex))}</div>
+      </div>`).join('');
 }
 
 function toggleColor(hex) {
@@ -199,7 +213,11 @@ function renderGrid(items) {
           ? `<img class="pimg" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"/>`
           : '<div class="pimg placeholder">sem foto</div>'}
         <div class="pbody">
-          <div class="pcode">${productCode(p.id)}${p.isActive === false ? ' · <span style="color:#777">inativo</span>' : ''}</div>
+          <div class="pcode-row">
+            <span class="pcode">${productCode(p.id)}</span>
+            <button class="pcopy" onclick="event.stopPropagation();copyCode('${productCode(p.id)}')">copiar</button>
+            ${p.isActive === false ? '<span class="pinactive">inativo</span>' : ''}
+          </div>
           <div class="pname">${escapeHtml(p.name)}</div>
           ${p.sub ? `<div class="psub">${escapeHtml(p.sub)}</div>` : ''}
           <div class="pmeta">${escapeHtml(p.category || 'sem categoria')}</div>
@@ -213,6 +231,24 @@ function renderGrid(items) {
         </div>
       </div>`;
   }).join('');
+}
+
+function copyCode(code) {
+  navigator.clipboard?.writeText(code).then(() => toast('Código ' + code + ' copiado'), () => toast(code));
+}
+
+function toast(msg) {
+  let el = document.getElementById('adminToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'adminToast';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#191c1d;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .2s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => (el.style.opacity = '0'), 1600);
 }
 
 load();
