@@ -77,6 +77,68 @@ router.get('/products', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Multi-facet product finder for the "Buscar" screen — every filter combines
+// (AND). Free text hits name + subtitle + description (covers "model" words
+// like midi / pantalona / alfaiataria). Stock is returned per product and
+// filtered client-side. `filters` lists every distinct value that exists so
+// the dropdowns/palette stay in sync with the real catalog.
+router.get('/product-search', async (req, res, next) => {
+  try {
+    const { q, category, color, size, minPrice, maxPrice, active } = req.query;
+    const params = [];
+    let sql = `
+      SELECT p.id, p.name, p.sub, p.price, p.old_price, p.colors, p.sizes, p.is_active,
+        c.name AS category_name,
+        (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS img,
+        COALESCE((SELECT SUM(pv.stock_qty) FROM product_variants pv WHERE pv.product_id = p.id), 0) AS total_stock
+      FROM products p
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE 1=1
+    `;
+    if (q) {
+      params.push(`%${q}%`);
+      const i = params.length;
+      sql += ` AND (p.name ILIKE $${i} OR p.sub ILIKE $${i} OR p.description ILIKE $${i})`;
+    }
+    if (category) { params.push(category); sql += ` AND p.category_id = $${params.length}`; }
+    if (color) { params.push(color); sql += ` AND p.colors ? $${params.length}`; }
+    if (size) { params.push(size); sql += ` AND p.sizes ? $${params.length}`; }
+    if (minPrice) { params.push(minPrice); sql += ` AND p.price >= $${params.length}`; }
+    if (maxPrice) { params.push(maxPrice); sql += ` AND p.price <= $${params.length}`; }
+    if (active === 'true') sql += ' AND p.is_active = true';
+    if (active === 'false') sql += ' AND p.is_active = false';
+    sql += ' ORDER BY p.id DESC';
+    const { rows } = await pool.query(sql, params);
+
+    const [colorRows, sizeRows, catRows] = await Promise.all([
+      pool.query(`SELECT DISTINCT v AS val FROM products, jsonb_array_elements_text(colors) v ORDER BY 1`),
+      pool.query(`SELECT DISTINCT v AS val FROM products, jsonb_array_elements_text(sizes) v ORDER BY 1`),
+      pool.query(`SELECT id, name FROM categories ORDER BY sort_order ASC`),
+    ]);
+
+    res.json({
+      items: rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        sub: r.sub,
+        price: Number(r.price),
+        oldPrice: r.old_price !== null ? Number(r.old_price) : null,
+        colors: r.colors,
+        sizes: r.sizes,
+        category: r.category_name,
+        img: r.img,
+        totalStock: Number(r.total_stock),
+        isActive: r.is_active,
+      })),
+      filters: {
+        colors: colorRows.rows.map((r) => r.val),
+        sizes: sizeRows.rows.map((r) => r.val),
+        categories: catRows.rows,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 // Keeps product_variants in sync with a product's current colors/sizes
 // arrays: inserts a (color,size) row for every combination that doesn't
 // already have one, defaulting new ones to 0 stock — the admin sets real

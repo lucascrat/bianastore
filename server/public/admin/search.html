@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BianaStore Admin — Buscar Peça</title>
+<link rel="stylesheet" href="admin.css"/>
+<style>
+  .filters { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px; }
+  .filters .field { margin-bottom:0; }
+  .filters .field input, .filters .field select { min-width:150px; }
+  .filters .field.price { min-width:auto; }
+  .filters .field.price input { min-width:88px; width:88px; }
+  .color-filter { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; }
+  .color-filter .lbl { font-size:13px; font-weight:700; color:var(--on-surface-variant); margin-right:2px; }
+  .cchip { width:26px; height:26px; border-radius:50%; border:2px solid var(--outline); cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); transition:transform .1s, box-shadow .15s; }
+  .cchip:hover { transform:scale(1.1); }
+  .cchip.active { border-color:var(--primary); box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--primary); transform:scale(1.1); }
+  .results-count { font-size:13px; color:var(--on-surface-variant); margin-bottom:12px; }
+  .pgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px; }
+  .pcard { background:var(--surface); border:1px solid var(--outline); border-radius:12px; overflow:hidden; cursor:pointer; transition:box-shadow .15s, transform .1s; display:flex; flex-direction:column; }
+  .pcard:hover { box-shadow:0 6px 20px rgba(0,0,0,.12); transform:translateY(-2px); }
+  .pcard .pimg { width:100%; aspect-ratio:3/4; object-fit:cover; background:var(--surface-container); display:block; }
+  .pcard .pimg.placeholder { display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant); font-size:12px; }
+  .pcard .pbody { padding:10px 12px 12px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .pcard .pcode { font-size:11px; font-weight:800; color:var(--primary); font-family:'Plus Jakarta Sans',sans-serif; }
+  .pcard .pname { font-size:14px; font-weight:700; line-height:1.25; }
+  .pcard .psub { font-size:12px; color:var(--on-surface-variant); }
+  .pcard .pmeta { font-size:12px; color:var(--on-surface-variant); }
+  .pcard .pswatches { display:flex; gap:4px; flex-wrap:wrap; }
+  .pcard .pswatches span { width:14px; height:14px; border-radius:50%; border:1px solid var(--outline); }
+  .pcard .psizes { font-size:11px; color:var(--on-surface-variant); }
+  .pcard .pprice { font-size:15px; font-weight:800; color:var(--primary); font-family:'Plus Jakarta Sans',sans-serif; }
+  .pcard .pprice s { font-size:12px; color:var(--on-surface-variant); font-weight:400; margin-left:6px; }
+  .pcard .pbottom { margin-top:auto; display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-top:6px; }
+  .empty-hint { color:var(--on-surface-variant); font-size:14px; padding:36px 0; text-align:center; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>BianaStore Admin</h1>
+  <nav id="nav"></nav>
+  <button class="btn secondary" onclick="logout()">Sair</button>
+</div>
+<main>
+  <div class="toolbar">
+    <h2>Buscar Peça</h2>
+    <button class="btn secondary" onclick="clearFilters()">Limpar filtros</button>
+  </div>
+
+  <div class="filters">
+    <div class="field">
+      <label>Nome, modelo, tecido…</label>
+      <input type="text" id="f-q" placeholder="ex: midi, pantalona, alfaiataria" oninput="debouncedLoad()"/>
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="f-category" onchange="load()"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label>Tamanho</label>
+      <select id="f-size" onchange="load()"><option value="">Todos</option></select>
+    </div>
+    <div class="field price">
+      <label>Preço mín.</label>
+      <input type="number" id="f-min" placeholder="R$" min="0" oninput="debouncedLoad()"/>
+    </div>
+    <div class="field price">
+      <label>Preço máx.</label>
+      <input type="number" id="f-max" placeholder="R$" min="0" oninput="debouncedLoad()"/>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="f-active" onchange="load()">
+        <option value="">Todos</option>
+        <option value="true">Ativos</option>
+        <option value="false">Inativos</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Estoque</label>
+      <select id="f-stock" onchange="applyAndRender()">
+        <option value="">Todos</option>
+        <option value="in">Com estoque</option>
+        <option value="low">Baixo (≤5)</option>
+        <option value="out">Esgotado</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="color-filter" id="colorFilter"><span class="lbl">Cor:</span></div>
+
+  <div class="results-count" id="count"></div>
+  <div class="pgrid" id="grid"></div>
+</main>
+<script src="admin.js"></script>
+<script>
+document.getElementById('nav').innerHTML = renderNav('search');
+
+let lastItems = [];       // full result set from the server (before stock filter)
+let activeColor = '';      // single selected hex, '' = any
+let filterColors = [];     // every distinct hex in the catalog, for the chips
+let filtersPopulated = false;
+let debounceTimer;
+
+function debouncedLoad() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(load, 300);
+}
+
+function clearFilters() {
+  ['f-q', 'f-min', 'f-max'].forEach((id) => (document.getElementById(id).value = ''));
+  ['f-category', 'f-size', 'f-active', 'f-stock'].forEach((id) => (document.getElementById(id).value = ''));
+  activeColor = '';
+  if (filtersPopulated) renderColorFilter();
+  load();
+}
+
+function statusFor(stock) {
+  if (stock <= 0) return { label: 'Esgotado', cls: 'cancelled' };
+  if (stock <= 5) return { label: 'Estoque baixo', cls: 'processing' };
+  return { label: 'Disponível', cls: 'delivered' };
+}
+
+async function load() {
+  await requireAuth();
+  const params = new URLSearchParams();
+  const q = document.getElementById('f-q').value.trim();
+  const cat = document.getElementById('f-category').value;
+  const size = document.getElementById('f-size').value;
+  const min = document.getElementById('f-min').value;
+  const max = document.getElementById('f-max').value;
+  const active = document.getElementById('f-active').value;
+  if (q) params.set('q', q);
+  if (cat) params.set('category', cat);
+  if (size) params.set('size', size);
+  if (min) params.set('minPrice', min);
+  if (max) params.set('maxPrice', max);
+  if (active) params.set('active', active);
+  if (activeColor) params.set('color', activeColor);
+
+  const { items, filters } = await api('/product-search?' + params.toString());
+  lastItems = items;
+
+  if (!filtersPopulated) {
+    const catSel = document.getElementById('f-category');
+    catSel.innerHTML = '<option value="">Todas</option>' +
+      filters.categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    catSel.value = cat;
+
+    const sizeSel = document.getElementById('f-size');
+    sizeSel.innerHTML = '<option value="">Todos</option>' +
+      filters.sizes.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    sizeSel.value = size;
+
+    filterColors = filters.colors;
+    renderColorFilter();
+    filtersPopulated = true;
+  }
+
+  applyAndRender();
+}
+
+function renderColorFilter() {
+  const el = document.getElementById('colorFilter');
+  el.innerHTML = '<span class="lbl">Cor:</span>' +
+    filterColors.map((hex) => `<div class="cchip ${hex === activeColor ? 'active' : ''}" style="background:${escapeHtml(hex)}" title="${escapeHtml(colorName(hex))}" onclick="toggleColor('${escapeHtml(hex)}')"></div>`).join('');
+}
+
+function toggleColor(hex) {
+  activeColor = activeColor === hex ? '' : hex;
+  renderColorFilter();
+  load();
+}
+
+function applyAndRender() {
+  const mode = document.getElementById('f-stock').value;
+  let items = lastItems;
+  if (mode === 'in') items = items.filter((i) => i.totalStock > 0);
+  else if (mode === 'low') items = items.filter((i) => i.totalStock > 0 && i.totalStock <= 5);
+  else if (mode === 'out') items = items.filter((i) => i.totalStock <= 0);
+  renderGrid(items);
+}
+
+function renderGrid(items) {
+  document.getElementById('count').textContent =
+    items.length === 1 ? '1 peça encontrada' : `${items.length} peças encontradas`;
+  const grid = document.getElementById('grid');
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty-hint">Nenhuma peça encontrada com esses filtros.</div>';
+    return;
+  }
+  grid.innerHTML = items.map((p) => {
+    const st = statusFor(p.totalStock);
+    const swatches = (p.colors || []).map((c) => `<span style="background:${escapeHtml(c)}" title="${escapeHtml(colorName(c))}"></span>`).join('');
+    return `
+      <div class="pcard" onclick="location.href='/admin/product-edit.html?id=${p.id}'">
+        ${p.img
+          ? `<img class="pimg" src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}"/>`
+          : '<div class="pimg placeholder">sem foto</div>'}
+        <div class="pbody">
+          <div class="pcode">${productCode(p.id)}${p.isActive === false ? ' · <span style="color:#777">inativo</span>' : ''}</div>
+          <div class="pname">${escapeHtml(p.name)}</div>
+          ${p.sub ? `<div class="psub">${escapeHtml(p.sub)}</div>` : ''}
+          <div class="pmeta">${escapeHtml(p.category || 'sem categoria')}</div>
+          ${swatches ? `<div class="pswatches">${swatches}</div>` : ''}
+          ${(p.sizes && p.sizes.length) ? `<div class="psizes">Tam: ${p.sizes.map(escapeHtml).join(', ')}</div>` : ''}
+          <div class="pprice">R$ ${p.price.toFixed(2).replace('.', ',')}${p.oldPrice ? ` <s>R$ ${p.oldPrice.toFixed(2).replace('.', ',')}</s>` : ''}</div>
+          <div class="pbottom">
+            <span class="badge ${st.cls}">${st.label}</span>
+            <span class="pmeta">${p.totalStock} un.</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+load();
+</script>
+</body>
+</html>
