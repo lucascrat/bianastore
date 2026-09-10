@@ -838,6 +838,14 @@ function renderCheckout() {
         <span class="checkout-section-title">Endereço de Entrega</span>
       </div>
       <div class="checkout-field">
+        <label>Quem vai receber</label>
+        <input type="text" id="addr-recipient" placeholder="Nome completo do destinatário" autocomplete="name"/>
+      </div>
+      <div class="checkout-field">
+        <label>Telefone / WhatsApp</label>
+        <input type="tel" id="addr-phone" placeholder="(11) 90000-0000" inputmode="tel" autocomplete="tel"/>
+      </div>
+      <div class="checkout-field">
         <label>CEP</label>
         <input type="text" id="addr-cep" placeholder="00000-000" inputmode="numeric" maxlength="9" oninput="onCepInput(this.value)"/>
         <span id="cepStatus" style="font-size:12px;color:var(--on-surface-variant)"></span>
@@ -1144,6 +1152,8 @@ async function placeOrder() {
   const btn = document.getElementById('checkoutConfirmBtn');
   const val = (id) => document.getElementById(id)?.value?.trim() || '';
   const shippingAddress = {
+    recipient: val('addr-recipient'),
+    phone: val('addr-phone'),
     cep: val('addr-cep'),
     street: val('addr-street'),
     number: val('addr-number'),
@@ -1152,6 +1162,10 @@ async function placeOrder() {
     city: val('addr-city'),
     state: val('addr-state'),
   };
+  if (!shippingAddress.recipient || !shippingAddress.phone) {
+    showToast('Informe quem vai receber e um telefone de contato!');
+    return;
+  }
   if (!shippingAddress.street || !shippingAddress.city) {
     showToast('Preencha o endereço de entrega!');
     return;

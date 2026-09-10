@@ -605,14 +605,122 @@ router.delete('/media/:id', async (req, res, next) => {
 });
 
 // ---- Orders ----
+// Canonical fulfilment pipeline. `status` is the machine value stored on the
+// row; `label` is the pt-BR text shown to the customer (auto-applied on a
+// status change unless the admin typed their own). `next` drives the
+// one-click "advance" button on the Vendas screen.
+const ORDER_FLOW = {
+  processing: { label: 'Em preparação', next: 'shipping', nextAction: 'Despachar' },
+  shipping: { label: 'A caminho', next: 'delivered', nextAction: 'Marcar entregue' },
+  delivered: { label: 'Entregue', next: null, nextAction: null },
+  cancelled: { label: 'Cancelado', next: null, nextAction: null },
+};
+
+const PERIOD_SQL = {
+  today: "o.created_at >= date_trunc('day', now())",
+  '7d': "o.created_at >= now() - interval '7 days'",
+  '30d': "o.created_at >= now() - interval '30 days'",
+  all: 'TRUE',
+};
+
 router.get('/orders', async (req, res, next) => {
   try {
+    const { period = 'today', status, payment, q } = req.query;
+    const where = [PERIOD_SQL[period] || PERIOD_SQL.today];
+    const params = [];
+    if (status && ORDER_FLOW[status]) { params.push(status); where.push(`o.status = $${params.length}`); }
+    if (payment) { params.push(payment); where.push(`o.payment_status = $${params.length}`); }
+    if (q) {
+      params.push(`%${q}%`);
+      where.push(`(o.order_number ILIKE $${params.length} OR c.name ILIKE $${params.length} OR o.shipping_address->>'recipient' ILIKE $${params.length})`);
+    }
+
     const { rows } = await pool.query(`
-      SELECT o.*, COUNT(oi.id)::int AS items_count
-      FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
-      GROUP BY o.id ORDER BY o.created_at DESC LIMIT 200
+      SELECT o.id, o.order_number, o.status, o.status_label, o.payment_status, o.payment_method,
+        o.subtotal, o.discount, o.shipping_cost, o.total, o.installments,
+        o.created_at, o.updated_at,
+        COALESCE(c.name, o.shipping_address->>'recipient') AS customer_name,
+        o.shipping_address->>'phone' AS customer_phone,
+        o.shipping_address->>'city' AS city,
+        o.shipping_address->>'state' AS state,
+        COUNT(oi.id)::int AS items_count,
+        COALESCE(SUM(oi.qty), 0)::int AS units
+      FROM orders o
+      LEFT JOIN customers c ON c.user_id = o.user_id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      WHERE ${where.join(' AND ')}
+      GROUP BY o.id, c.name
+      ORDER BY o.created_at DESC
+      LIMIT 300
+    `, params);
+
+    const ids = rows.map((r) => r.id);
+    let itemsByOrder = {};
+    if (ids.length) {
+      const { rows: items } = await pool.query(
+        `SELECT order_id, product_id, product_name_snapshot, product_image_snapshot, size, color, qty
+         FROM order_items WHERE order_id = ANY($1) ORDER BY id ASC`,
+        [ids],
+      );
+      itemsByOrder = items.reduce((acc, it) => {
+        (acc[it.order_id] = acc[it.order_id] || []).push({
+          productId: it.product_id,
+          name: it.product_name_snapshot,
+          img: it.product_image_snapshot,
+          size: it.size,
+          color: it.color || null,
+          qty: it.qty,
+        });
+        return acc;
+      }, {});
+    }
+
+    // Summary is over ALL orders (ignores the current filters) so the alert
+    // counts don't vanish when the admin narrows the view.
+    const { rows: sum } = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now())) AS today_count,
+        COALESCE(SUM(total) FILTER (WHERE payment_status='paid' AND created_at >= date_trunc('day', now())), 0) AS today_revenue,
+        COUNT(*) FILTER (WHERE payment_status='paid' AND status='processing') AS to_ship,
+        COUNT(*) FILTER (WHERE status='shipping') AS in_transit,
+        COUNT(*) FILTER (WHERE status='delivered' AND updated_at >= date_trunc('week', now())) AS delivered_week,
+        COUNT(*) FILTER (WHERE payment_status='pending' AND status <> 'cancelled') AS awaiting_payment
+      FROM orders
     `);
-    res.json(rows);
+    const s = sum[0];
+
+    res.json({
+      summary: {
+        todayCount: Number(s.today_count),
+        todayRevenue: Number(s.today_revenue),
+        toShip: Number(s.to_ship),
+        inTransit: Number(s.in_transit),
+        deliveredWeek: Number(s.delivered_week),
+        awaitingPayment: Number(s.awaiting_payment),
+      },
+      orders: rows.map((r) => ({
+        id: r.id,
+        orderNumber: r.order_number,
+        status: r.status,
+        statusLabel: r.status_label,
+        paymentStatus: r.payment_status,
+        paymentMethod: r.payment_method,
+        subtotal: Number(r.subtotal),
+        discount: Number(r.discount),
+        shippingCost: Number(r.shipping_cost),
+        total: Number(r.total),
+        installments: r.installments,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        customerName: r.customer_name,
+        customerPhone: r.customer_phone,
+        city: r.city,
+        state: r.state,
+        itemsCount: r.items_count,
+        units: r.units,
+        items: itemsByOrder[r.id] || [],
+      })),
+    });
   } catch (err) { next(err); }
 });
 
@@ -621,11 +729,15 @@ router.get('/orders/:id', async (req, res, next) => {
     const { rows } = await pool.query('SELECT * FROM orders WHERE id=$1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Order not found' });
     const { rows: items } = await pool.query('SELECT * FROM order_items WHERE order_id=$1', [req.params.id]);
-    res.json({ ...rows[0], items });
+    let customer = null;
+    const { rows: cust } = await pool.query('SELECT name, email, photo_url FROM customers WHERE user_id=$1', [rows[0].user_id]);
+    if (cust.length) customer = cust[0];
+    res.json({ ...rows[0], items, customer });
   } catch (err) { next(err); }
 });
 
 const STATUS_NOTIFICATIONS = {
+  processing: { icon: 'inventory_2', title: 'Pagamento confirmado! 🎉', body: (n) => `Recebemos o pagamento do pedido ${n}. Já estamos preparando tudo.` },
   shipping: { icon: 'local_shipping', title: 'Pedido enviado! 📦', body: (n) => `Seu pedido ${n} está a caminho.` },
   delivered: { icon: 'check_circle', title: 'Pedido entregue!', body: (n) => `Seu pedido ${n} foi entregue. Aproveite!` },
   cancelled: { icon: 'cancel', title: 'Pedido cancelado', body: (n) => `Seu pedido ${n} foi cancelado.` },
@@ -634,9 +746,13 @@ const STATUS_NOTIFICATIONS = {
 router.patch('/orders/:id', async (req, res, next) => {
   try {
     const { status, statusLabel } = req.body;
+    if (status && !ORDER_FLOW[status]) return res.status(400).json({ error: 'Invalid status' });
+    // A bare status change carries the canonical pt-BR label with it, so the
+    // admin never has to retype it; an explicit statusLabel still wins.
+    const label = statusLabel || (status ? ORDER_FLOW[status].label : null);
     const { rows } = await pool.query(
       'UPDATE orders SET status=COALESCE($1,status), status_label=COALESCE($2,status_label), updated_at=now() WHERE id=$3 RETURNING *',
-      [status || null, statusLabel || null, req.params.id]
+      [status || null, label, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Order not found' });
     const order = rows[0];

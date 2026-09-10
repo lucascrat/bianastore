@@ -42,7 +42,7 @@ body {
   margin: 0;
 }
 
-.topbar nav { display: flex; gap: 4px; }
+.topbar nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
 
 .topbar nav a {
   padding: 8px 12px;

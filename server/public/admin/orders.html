@@ -3,8 +3,96 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>BianaStore Admin — Pedidos</title>
+<title>BianaStore Admin — Vendas</title>
 <link rel="stylesheet" href="admin.css"/>
+<style>
+  .sub { color:var(--on-surface-variant); font-size:13px; margin:-6px 0 18px; }
+
+  .alert-banner {
+    display:flex; align-items:center; gap:12px; background:#fff4e5; border:1px solid #ffcf99;
+    color:#8a4b00; border-radius:12px; padding:12px 16px; margin-bottom:16px; cursor:pointer;
+    font-weight:600; font-size:14px; transition:background .15s;
+  }
+  .alert-banner:hover { background:#ffedd6; }
+  .alert-banner .big { font-size:20px; }
+  .alert-banner.calm { background:var(--surface-container); border-color:var(--outline); color:var(--on-surface-variant); cursor:default; font-weight:500; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+  .stat { background:var(--surface); border:1px solid var(--outline); border-radius:12px; padding:14px 16px; }
+  .stat .k { font-size:12px; color:var(--on-surface-variant); font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+  .stat .v { font-size:24px; font-weight:800; font-family:'Plus Jakarta Sans',sans-serif; margin-top:4px; line-height:1.1; }
+  .stat.accent .v { color:var(--primary); }
+  .stat .vsub { font-size:12px; color:var(--on-surface-variant); margin-top:2px; }
+
+  .tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .tab {
+    border:1px solid var(--outline); background:var(--surface); border-radius:999px;
+    padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; color:var(--on-surface-variant);
+  }
+  .tab.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+  .filterbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .chip {
+    border:1px solid var(--outline); background:var(--surface); border-radius:999px;
+    padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; color:var(--on-surface-variant);
+  }
+  .chip.active { background:var(--on-background); border-color:var(--on-background); color:#fff; }
+  .filterbar input {
+    margin-left:auto; padding:8px 12px; border:1px solid var(--outline); border-radius:8px;
+    font-size:13px; min-width:200px;
+  }
+
+  .count { font-size:13px; color:var(--on-surface-variant); margin-bottom:12px; }
+
+  .ogrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .ocard { background:var(--surface); border:1px solid var(--outline); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .ocard.flag { border-color:#ffcf99; box-shadow:0 0 0 3px #fff4e5; }
+
+  .ohead { display:flex; align-items:baseline; gap:8px; }
+  .ocode { font-size:17px; font-weight:800; color:var(--primary); font-family:'Plus Jakarta Sans',sans-serif; }
+  .otime { font-size:12px; color:var(--on-surface-variant); }
+  .ohead .badge { margin-left:auto; }
+
+  .who { font-size:14px; font-weight:700; }
+  .who .noname { color:#b06a00; font-weight:600; }
+  .where, .phone { font-size:12px; color:var(--on-surface-variant); }
+  .phone a { color:var(--on-surface-variant); }
+
+  .thumbs { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .thumbs img { width:44px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--outline); background:var(--surface-container); }
+  .thumbs .ph { width:44px; height:52px; border-radius:6px; border:1px solid var(--outline); background:var(--surface-container); display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--on-surface-variant); }
+  .thumbs .more { font-size:12px; color:var(--on-surface-variant); font-weight:600; }
+
+  .stepper { display:flex; align-items:center; gap:0; margin:2px 0; }
+  .step { display:flex; flex-direction:column; align-items:center; gap:3px; flex:0 0 auto; }
+  .step .dot { width:16px; height:16px; border-radius:50%; border:2px solid var(--outline); background:var(--surface); }
+  .step .lbl { font-size:10px; color:var(--on-surface-variant); white-space:nowrap; }
+  .step.done .dot { background:var(--primary); border-color:var(--primary); }
+  .step.done .lbl { color:var(--primary); font-weight:700; }
+  .step .bar { display:none; }
+  .seg { flex:1 1 auto; height:2px; background:var(--outline); margin:0 4px; position:relative; top:-9px; }
+  .seg.done { background:var(--primary); }
+  .cancel-pill { font-size:12px; font-weight:700; color:var(--error); background:#ffdad6; border-radius:999px; padding:3px 12px; align-self:flex-start; }
+
+  .orow { display:flex; align-items:center; gap:8px; border-top:1px solid var(--outline); padding-top:10px; }
+  .ototal { font-weight:800; font-family:'Plus Jakarta Sans',sans-serif; }
+  .ototal .tl { font-size:11px; color:var(--on-surface-variant); font-weight:600; display:block; text-transform:uppercase; letter-spacing:.03em; }
+  .oactions { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
+  .oactions .btn { padding:7px 12px; font-size:12px; }
+  .pending-note { font-size:12px; color:#b06a00; font-weight:600; }
+
+  .empty { text-align:center; color:var(--on-surface-variant); padding:48px 0; }
+
+  .toast {
+    position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+    background:var(--on-background); color:#fff; padding:12px 20px; border-radius:10px;
+    font-size:14px; font-weight:600; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  @media (max-width:520px) {
+    .ogrid { grid-template-columns:1fr; }
+    .filterbar input { margin-left:0; width:100%; }
+  }
+</style>
 </head>
 <body>
 <div class="topbar">
@@ -13,49 +101,266 @@
   <button class="btn secondary" onclick="logout()">Sair</button>
 </div>
 <main>
-  <h2>Pedidos</h2>
-  <div class="card" style="padding:0">
-    <table>
-      <thead><tr><th>Pedido</th><th>Data</th><th>Itens</th><th>Total</th><th>Pagamento</th><th>Status</th><th></th></tr></thead>
-      <tbody id="rows"><tr><td colspan="7">Carregando…</td></tr></tbody>
-    </table>
-  </div>
+  <div class="toolbar"><h2>Vendas</h2></div>
+  <p class="sub">Acompanhe as vendas do dia, despache as peças e atualize o status de cada pedido.</p>
+
+  <div id="alertBanner" style="display:none"></div>
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" id="periods"></div>
+  <div class="filterbar" id="filterbar"></div>
+  <div class="count" id="count"></div>
+  <div class="ogrid" id="grid"><div class="empty">Carregando…</div></div>
 </main>
+
 <script src="admin.js"></script>
 <script>
 document.getElementById('nav').innerHTML = renderNav('orders');
 
-async function load() {
-  await requireAuth();
-  const orders = await api('/orders');
-  const rows = document.getElementById('rows');
-  if (!orders.length) {
-    rows.innerHTML = '<tr><td colspan="7">Nenhum pedido ainda.</td></tr>';
-    return;
-  }
-  const paymentBadge = { paid: '<span class="badge delivered">Pago</span>', pending: '<span class="badge processing">Aguardando</span>', failed: '<span class="badge cancelled">Falhou</span>', refunded: '<span class="badge inactive">Reembolsado</span>' };
-  rows.innerHTML = orders.map((o) => `
-    <tr>
-      <td>${escapeHtml(o.order_number)}</td>
-      <td>${new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
-      <td>${o.items_count}</td>
-      <td>${fmtMoney(o.total)}</td>
-      <td>${paymentBadge[o.payment_status] || o.payment_status}</td>
-      <td><span class="badge ${o.status}">${escapeHtml(o.status_label)}</span></td>
-      <td>
-        <a class="btn secondary" href="/admin/order-detail.html?id=${o.id}">Ver</a>
-        <button class="btn danger" onclick="removeOrder(${o.id}, '${escapeHtml(o.order_number)}')">Excluir</button>
-      </td>
-    </tr>
-  `).join('');
+const PERIODS = [
+  { key: 'today', label: 'Hoje' },
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'all', label: 'Tudo' },
+];
+const STATUS_FILTERS = [
+  { key: '', label: 'Todos' },
+  { key: 'processing', label: 'Em preparação' },
+  { key: 'shipping', label: 'A caminho' },
+  { key: 'delivered', label: 'Entregue' },
+  { key: 'cancelled', label: 'Cancelado' },
+];
+
+let period = 'today';
+let statusFilter = '';
+let paymentFilter = '';
+let query = '';
+let lastSeenCreatedAt = null;   // newest createdAt observed, to detect new sales
+let firstLoad = true;
+let audioCtx = null;
+let searchTimer = null;
+
+// A short two-note chime for a new sale. WebAudio needs a user gesture to
+// start; we unlock on the first interaction and no-op silently otherwise.
+document.addEventListener('pointerdown', () => {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}, { once: true });
+
+function beep() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  [880, 1175].forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.001, now + i * 0.16);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + i * 0.16 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.16 + 0.15);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now + i * 0.16);
+    osc.stop(now + i * 0.16 + 0.16);
+  });
 }
 
-async function removeOrder(id, orderNumber) {
-  if (!confirm(`Excluir o pedido ${orderNumber}? Isso apaga o registro permanentemente — use só para pedidos de teste.`)) return;
-  await api(`/orders/${id}`, { method: 'DELETE' });
-  load();
+let toastTimer = null;
+function toast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 2600);
 }
+
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'agora mesmo';
+  if (s < 3600) return `há ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `há ${Math.floor(s / 3600)} h`;
+  const days = Math.floor(s / 86400);
+  if (days < 7) return `há ${days} d`;
+  return d.toLocaleDateString('pt-BR');
+}
+
+function renderTabs() {
+  document.getElementById('periods').innerHTML = PERIODS.map((p) =>
+    `<button class="tab ${p.key === period ? 'active' : ''}" onclick="setPeriod('${p.key}')">${p.label}</button>`
+  ).join('');
+}
+function renderFilterbar() {
+  const chips = STATUS_FILTERS.map((s) =>
+    `<button class="chip ${s.key === statusFilter ? 'active' : ''}" onclick="setStatus('${s.key}')">${s.label}</button>`
+  ).join('');
+  document.getElementById('filterbar').innerHTML =
+    chips + `<input id="q" type="search" placeholder="Buscar nº do pedido ou cliente…" value="${escapeHtml(query)}" oninput="onSearch(this.value)"/>`;
+}
+function setPeriod(k) { period = k; renderTabs(); load(); }
+function setStatus(k) { statusFilter = k; paymentFilter = ''; renderFilterbar(); load(); }
+function onSearch(v) {
+  query = v;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(load, 300);
+}
+
+function renderStats(s) {
+  const cards = [
+    { k: 'Vendas hoje', v: s.todayCount, vsub: fmtMoney(s.todayRevenue), accent: true },
+    { k: 'A preparar', v: s.toShip, vsub: 'pagos, aguardando envio' },
+    { k: 'A caminho', v: s.inTransit, vsub: 'em trânsito' },
+    { k: 'Entregues', v: s.deliveredWeek, vsub: 'nesta semana' },
+    { k: 'Aguardando pgto', v: s.awaitingPayment, vsub: 'não pagos' },
+  ];
+  document.getElementById('stats').innerHTML = cards.map((c) => `
+    <div class="stat ${c.accent ? 'accent' : ''}">
+      <div class="k">${c.k}</div>
+      <div class="v">${c.v}</div>
+      <div class="vsub">${c.vsub}</div>
+    </div>`).join('');
+
+  const banner = document.getElementById('alertBanner');
+  if (s.toShip > 0) {
+    banner.className = 'alert-banner';
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span class="big">📦</span> <span>${s.toShip} pedido${s.toShip > 1 ? 's' : ''} pago${s.toShip > 1 ? 's' : ''} aguardando envio — clique para ver</span>`;
+    banner.onclick = () => { period = 'all'; statusFilter = 'processing'; paymentFilter = 'paid'; renderTabs(); renderFilterbar(); load(); };
+  } else {
+    banner.className = 'alert-banner calm';
+    banner.style.display = 'flex';
+    banner.innerHTML = `<span class="big">✅</span> <span>Nenhum pedido pendente de envio. Tudo em dia!</span>`;
+    banner.onclick = null;
+  }
+}
+
+function stepper(status) {
+  if (status === 'cancelled') return `<div class="cancel-pill">✕ Pedido cancelado</div>`;
+  const order = ['processing', 'shipping', 'delivered'];
+  const curIdx = order.indexOf(status);
+  let html = '<div class="stepper">';
+  order.forEach((st, i) => {
+    const done = i <= curIdx;
+    html += `<div class="step ${done ? 'done' : ''}"><span class="dot"></span><span class="lbl">${ORDER_STATUS[st].label}</span></div>`;
+    if (i < order.length - 1) html += `<span class="seg ${i < curIdx ? 'done' : ''}"></span>`;
+  });
+  return html + '</div>';
+}
+
+function cardActions(o) {
+  const ver = `<a class="btn secondary" href="/admin/order-detail.html?id=${o.id}">Ver</a>`;
+  if (o.status === 'cancelled') {
+    return `<button class="btn secondary" onclick="advance(${o.id}, 'processing', 'Reabrir este pedido?')">Reabrir</button>${ver}`;
+  }
+  if (o.status === 'delivered') {
+    return `<span class="pending-note">✓ Concluído</span>${ver}`;
+  }
+  if (o.paymentStatus === 'pending') {
+    return `<span class="pending-note">Aguardando pagamento</span>
+      <button class="btn danger" onclick="advance(${o.id}, 'cancelled', 'Cancelar o pedido ${escapeHtml(o.orderNumber)}?')">Cancelar</button>${ver}`;
+  }
+  const flow = ORDER_STATUS[o.status];
+  const adv = flow && flow.next
+    ? `<button class="btn" onclick="advance(${o.id}, '${flow.next}')">${flow.nextAction}</button>`
+    : '';
+  return `${adv}
+    <button class="btn danger" onclick="advance(${o.id}, 'cancelled', 'Cancelar o pedido ${escapeHtml(o.orderNumber)}?')">Cancelar</button>${ver}`;
+}
+
+// Grey rounded rect, no quotes/spaces that would need escaping inside an
+// attribute. Applied via onThumbError() so the handler stays a simple call.
+const THUMB_PLACEHOLDER = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='44'%20height='52'%3E%3Crect%20width='44'%20height='52'%20rx='4'%20fill='%23eceded'/%3E%3C/svg%3E";
+function onThumbError(img) { img.onerror = null; img.src = THUMB_PLACEHOLDER; }
+
+function orderCard(o) {
+  const thumbs = o.items.slice(0, 4).map((it) =>
+    it.img
+      ? `<img src="${escapeHtml(it.img)}" alt="" onerror="onThumbError(this)"/>`
+      : `<span class="ph">sem<br>foto</span>`
+  ).join('');
+  const more = o.items.length > 4 ? `<span class="more">+${o.items.length - 4}</span>` : '';
+  const where = [o.city, o.state].filter(Boolean).join('/');
+  const phoneDigits = (o.customerPhone || '').replace(/\D/g, '');
+  const flagged = o.paymentStatus === 'paid' && o.status === 'processing';
+
+  return `
+    <div class="ocard ${flagged ? 'flag' : ''}">
+      <div class="ohead">
+        <span class="ocode">${escapeHtml(o.orderNumber)}</span>
+        <span class="otime">${timeAgo(o.createdAt)}</span>
+        <span class="badge ${(PAYMENT_STATUS[o.paymentStatus] || {}).badge || 'inactive'}">${(PAYMENT_STATUS[o.paymentStatus] || {}).label || o.paymentStatus}</span>
+      </div>
+      <div>
+        <div class="who">${o.customerName ? escapeHtml(o.customerName) : '<span class="noname">Sem nome informado</span>'}</div>
+        ${where ? `<div class="where">${escapeHtml(where)}</div>` : ''}
+        ${phoneDigits ? `<div class="phone">📞 <a href="https://wa.me/55${phoneDigits}" target="_blank" rel="noopener">${escapeHtml(o.customerPhone)}</a></div>` : ''}
+      </div>
+      <div class="thumbs">${thumbs}${more}<span class="more" style="margin-left:4px">${o.units} peça${o.units > 1 ? 's' : ''}</span></div>
+      ${stepper(o.status)}
+      <div class="orow">
+        <div class="ototal"><span class="tl">Total</span>${fmtMoney(o.total)}</div>
+        <div class="oactions">${cardActions(o)}</div>
+      </div>
+    </div>`;
+}
+
+async function advance(id, status, confirmMsg) {
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  try {
+    await api(`/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    toast('Status atualizado — o cliente foi avisado.');
+    load();
+  } catch (err) {
+    toast(err.message || 'Falha ao atualizar');
+  }
+}
+
+async function load() {
+  await requireAuth();
+  const params = new URLSearchParams({ period });
+  if (statusFilter) params.set('status', statusFilter);
+  if (paymentFilter) params.set('payment', paymentFilter);
+  if (query.trim()) params.set('q', query.trim());
+
+  let data;
+  try {
+    data = await api(`/orders?${params}`);
+  } catch (err) {
+    document.getElementById('grid').innerHTML = `<div class="empty">Erro: ${escapeHtml(err.message)}</div>`;
+    return;
+  }
+
+  renderStats(data.summary);
+
+  const grid = document.getElementById('grid');
+  document.getElementById('count').textContent =
+    `${data.orders.length} pedido${data.orders.length === 1 ? '' : 's'}`;
+
+  if (!data.orders.length) {
+    grid.innerHTML = `<div class="empty">Nenhum pedido neste filtro.</div>`;
+  } else {
+    grid.innerHTML = data.orders.map(orderCard).join('');
+  }
+
+  // New-sale detection: compare the newest createdAt against last poll.
+  const newest = data.orders.length ? data.orders[0].createdAt : null;
+  if (!firstLoad && newest && newest !== lastSeenCreatedAt && new Date(newest) > new Date(lastSeenCreatedAt || 0)) {
+    toast('🎉 Novo pedido recebido!');
+    beep();
+  }
+  if (newest && (!lastSeenCreatedAt || new Date(newest) > new Date(lastSeenCreatedAt))) {
+    lastSeenCreatedAt = newest;
+  }
+  firstLoad = false;
+}
+
+renderTabs();
+renderFilterbar();
 load();
+// Auto-refresh so new sales surface without a manual reload.
+setInterval(load, 45000);
 </script>
 </body>
 </html>

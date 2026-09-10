@@ -1,8 +1,8 @@
-const CACHE_NAME = 'bianastore-v18'; // bumped: codigo de referencia do produto (#01, #02...)
+const CACHE_NAME = 'bianastore-v19'; // bumped: destinatario + telefone no checkout
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/app.js?v=14',
+  '/app.js?v=15',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

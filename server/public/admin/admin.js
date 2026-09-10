@@ -72,6 +72,23 @@ function colorName(hex) {
   return known ? known.name : hex;
 }
 
+// Order fulfilment pipeline — mirrors ORDER_FLOW on the server. `badge` maps
+// to an admin.css .badge modifier; `next`/`nextAction` drive the one-click
+// advance button on the Vendas screen.
+const ORDER_STATUS = {
+  processing: { label: 'Em preparação', badge: 'processing', icon: 'inventory_2', next: 'shipping', nextAction: 'Despachar' },
+  shipping: { label: 'A caminho', badge: 'shipping', icon: 'local_shipping', next: 'delivered', nextAction: 'Marcar entregue' },
+  delivered: { label: 'Entregue', badge: 'delivered', icon: 'check_circle', next: null, nextAction: null },
+  cancelled: { label: 'Cancelado', badge: 'cancelled', icon: 'cancel', next: null, nextAction: null },
+};
+
+const PAYMENT_STATUS = {
+  paid: { label: 'Pago', badge: 'delivered' },
+  pending: { label: 'Aguardando pagamento', badge: 'processing' },
+  failed: { label: 'Falhou', badge: 'cancelled' },
+  refunded: { label: 'Reembolsado', badge: 'inactive' },
+};
+
 function renderNav(active) {
   const items = [
     { href: '/admin/dashboard.html', label: 'Dashboard', key: 'dashboard' },
@@ -80,7 +97,7 @@ function renderNav(active) {
     { href: '/admin/inventory.html', label: 'Estoque', key: 'inventory' },
     { href: '/admin/categories.html', label: 'Categorias', key: 'categories' },
     { href: '/admin/feed.html', label: 'Feed', key: 'feed' },
-    { href: '/admin/orders.html', label: 'Pedidos', key: 'orders' },
+    { href: '/admin/orders.html', label: 'Vendas', key: 'orders' },
     { href: '/admin/coupons.html', label: 'Cupons', key: 'coupons' },
     { href: '/admin/shipping.html', label: 'Frete', key: 'shipping' },
     { href: '/admin/customers.html', label: 'Clientes', key: 'customers' },
