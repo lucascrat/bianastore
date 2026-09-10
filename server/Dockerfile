@@ -9,5 +9,6 @@ COPY . .
 
 EXPOSE 3000
 
-# Every deploy self-heals: idempotent migration, guarded seed, then start.
-CMD ["sh", "-c", "node db/migrate.js && node db/seed.js && node index.js"]
+# Every deploy self-heals: idempotent migration, guarded seed, guarded
+# test-residue cleanup, then start.
+CMD ["sh", "-c", "node db/migrate.js && node db/seed.js && node db/cleanup.js && node index.js"]
